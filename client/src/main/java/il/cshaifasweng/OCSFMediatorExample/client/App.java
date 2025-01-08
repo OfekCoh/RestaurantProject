@@ -46,9 +46,13 @@ public class App extends Application {
 	public void stop() throws Exception {
 		// TODO Auto-generated method stub
     	EventBus.getDefault().unregister(this);
-        client.sendToServer("remove client");
-        client.closeConnection();
+        if (client != null) {
+            client.sendToServer("remove client");
+            client.closeConnection();
+        }
 		super.stop();
+        Platform.exit(); // Forcefully exit JavaFX platform
+        System.exit(0);  // Ensure the JVM shuts down
 	}
 
     @Subscribe
