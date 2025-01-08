@@ -27,7 +27,6 @@
 			<groupId>${groupId}</groupId>
 			<artifactId>entities</artifactId>
 		</dependency>
-
 <!--		added-->
 		<dependency>
 			<groupId>mysql</groupId>
@@ -35,12 +34,10 @@
 			<version>8.0.19</version>
 		</dependency>
 		<dependency>
-
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-core</artifactId>
 			<version>5.4.12.Final</version>
 		</dependency>
-
 	</dependencies>
 
 	<build>
@@ -78,5 +75,13 @@
                     </executions>
 				</plugin>
 		</plugins>
+		<resources>
+			<resource>
+				<directory>src/main/java</directory>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+		</resources>
 	</build>
 </project>

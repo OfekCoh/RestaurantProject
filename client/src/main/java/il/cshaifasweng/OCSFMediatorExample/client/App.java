@@ -20,14 +20,13 @@ import org.greenrobot.eventbus.Subscribe;
 public class App extends Application {
 
     private static Scene scene;
-    private SimpleClient client;
+    public SimpleClient client;
 
     @Override
     public void start(Stage stage) throws IOException {
-    	EventBus.getDefault().register(this);
-    	client = SimpleClient.getClient();
-    	client.openConnection();
-        scene = new Scene(loadFXML("primary"), 640, 480);
+        EventBus.getDefault().register(this);
+//        stage.setTitle("Resturant");
+        scene = new Scene(loadFXML("connect"), 640, 480);
         stage.setScene(scene);
         stage.show();
     }
@@ -40,8 +39,8 @@ public class App extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxml + ".fxml"));
         return fxmlLoader.load();
     }
-    
-    
+
+
 
     @Override
 	public void stop() throws Exception {
@@ -51,18 +50,18 @@ public class App extends Application {
         client.closeConnection();
 		super.stop();
 	}
-    
+
     @Subscribe
     public void onWarningEvent(WarningEvent event) {
     	Platform.runLater(() -> {
-    		Alert alert = new Alert(AlertType.WARNING,
+    		Alert alert = new Alert(AlertType.INFORMATION,
         			String.format("Message: %s\nTimestamp: %s\n",
         					event.getWarning().getMessage(),
         					event.getWarning().getTime().toString())
         	);
         	alert.show();
     	});
-    	
+
     }
 
 	public static void main(String[] args) {
