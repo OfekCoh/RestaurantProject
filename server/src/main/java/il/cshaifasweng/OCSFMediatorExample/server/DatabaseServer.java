@@ -169,23 +169,33 @@ public class DatabaseServer {
      * @throws Exception - in case we didn't succeed in updating
      */
     public static void updatePriceForDish(int id, int price) throws Exception {
-        SessionFactory sessionFactory = getSessionFactory(DatabaseServer.password);
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        CriteriaBuilder builder = session.getCriteriaBuilder();
-        CriteriaUpdate<Dish> criteriaUpdate = builder.createCriteriaUpdate(Dish.class);
-        // Define the root for the entity
-        Root<Dish> root = criteriaUpdate.from(Dish.class);
-        // Set the update clause
-        criteriaUpdate.set(root.get("price"), price);
-        // Set the where clause
-        criteriaUpdate.where(builder.equal(root.get("id"), id));
-        // Execute the update query
-        int affectedRows = session.createQuery(criteriaUpdate).executeUpdate();
-        // Commit the transaction
-        session.getTransaction().commit();
-        session.close();
+        try {
 
+
+            SessionFactory sessionFactory = getSessionFactory(DatabaseServer.password);
+            session = sessionFactory.openSession();
+            session.beginTransaction();
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaUpdate<Dish> criteriaUpdate = builder.createCriteriaUpdate(Dish.class);
+            // Define the root for the entity
+            Root<Dish> root = criteriaUpdate.from(Dish.class);
+            // Set the update clause
+            criteriaUpdate.set(root.get("price"), price);
+            // Set the where clause
+            criteriaUpdate.where(builder.equal(root.get("id"), id));
+            // Execute the update query
+            int affectedRows = session.createQuery(criteriaUpdate).executeUpdate();
+            // Commit the transaction
+            session.getTransaction().commit();
+            session.close();
+        }
+        catch (Exception exception) {
+            if (session != null) {
+                session.getTransaction().rollback();
+            }
+            System.err.println("An error occured, changes have been rolled back.");
+            exception.printStackTrace();
+        }
     }
 
     private static <T> List<T> getAllEntities(Class<T> entityClass) throws Exception {
