@@ -56,7 +56,7 @@ public class DatabaseServer {
 
     private static SessionFactory getSessionFactory(String password) throws HibernateException {
         Configuration configuration = new Configuration();
-//        configuration.setProperty("hibernate.connection.password", password);
+        configuration.setProperty("hibernate.connection.password", password);
 
         // Add ALL of your entities here. You can also try adding a whole package.
         configuration.addAnnotatedClass(RestaurantBranch.class);
