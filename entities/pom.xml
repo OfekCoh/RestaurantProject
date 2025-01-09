@@ -8,4 +8,12 @@
   <groupId>il.cshaifasweng.OCSFMediatorExample</groupId>
   <artifactId>entities</artifactId>
   <packaging>jar</packaging>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/java</directory>
+      </resource>
+    </resources>
+  </build>
 </project>

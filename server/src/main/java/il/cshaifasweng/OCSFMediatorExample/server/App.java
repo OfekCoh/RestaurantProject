@@ -6,7 +6,6 @@ import java.util.Scanner;
 
 /**
  * Hello world!
- *
  */
 public class App 
 {
@@ -16,7 +15,7 @@ public class App
 
     public static void main( String[] args ) throws IOException
     {
-       String databasePassword= getDatabasePassword();
+        String databasePassword= getDatabasePassword();
         server = new SimpleServer(3000,databasePassword);
         System.out.println("Server is listening");
         server.listen();

@@ -8,6 +8,7 @@ import org.hibernate.service.ServiceRegistry;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.CriteriaUpdate;
 import javax.persistence.criteria.Root;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -15,17 +16,24 @@ import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.*;
 
+import static il.cshaifasweng.OCSFMediatorExample.server.DishConverter.convertToDishEntList;
+
 
 public class DatabaseServer {
-    private Session session;
+    private static Session session;
+    public static String password;
 
     public DatabaseServer(String password){
         try {
+            DatabaseServer.password =password;
             // Initialize Hibernate session
             SessionFactory sessionFactory = getSessionFactory(password);
             session = sessionFactory.openSession();
             session.beginTransaction();
-
+            if (!session.createQuery("FROM Dish", Dish.class).getResultList().isEmpty()) {
+                System.out.println("Database already populated. Skipping initialization.");
+                return;
+            }
             // start code here
             createDatabase(session);
             printAllBranches(session);
@@ -119,6 +127,74 @@ public class DatabaseServer {
              * MANDATORY to do if you are saving a large amount of data - otherwise you may get cache errors.
              */
             session.flush();
+        }
+    }
+
+    private static List<Dish> getAllDishes() throws Exception {
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<Dish> query = builder.createQuery(Dish.class);
+        query.from(Dish.class);
+        List<Dish> data = session.createQuery(query).getResultList();
+        return data;
+    }
+
+    public static List<DishEnt> getMenu() throws Exception {
+        List<DishEnt> dishes = null;
+        try {
+            SessionFactory sessionFactory = getSessionFactory(DatabaseServer.password);
+            session = sessionFactory.openSession();
+            session.beginTransaction();
+            // start code here
+            getAllDishes().toString();
+            dishes = convertToDishEntList(getAllDishes());
+
+            session.getTransaction().commit(); // Save everything.
+
+        } catch (Exception exception) {
+            if (session != null) {
+                session.getTransaction().rollback();
+            }
+            System.err.println("An error occured, changes have been rolled back.");
+            exception.printStackTrace();
+        } finally {
+            session.close();
+        }
+        return dishes;
+    }
+
+    /*
+     * This method updates the price of the specific dish with the id to the new price
+     * @param id - the id of the dish
+     * @param price - the new price for the dish
+     * @throws Exception - in case we didn't succeed in updating
+     */
+    public static void updatePriceForDish(int id, int price) throws Exception {
+        try {
+
+
+            SessionFactory sessionFactory = getSessionFactory(DatabaseServer.password);
+            session = sessionFactory.openSession();
+            session.beginTransaction();
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaUpdate<Dish> criteriaUpdate = builder.createCriteriaUpdate(Dish.class);
+            // Define the root for the entity
+            Root<Dish> root = criteriaUpdate.from(Dish.class);
+            // Set the update clause
+            criteriaUpdate.set(root.get("price"), price);
+            // Set the where clause
+            criteriaUpdate.where(builder.equal(root.get("id"), id));
+            // Execute the update query
+            int affectedRows = session.createQuery(criteriaUpdate).executeUpdate();
+            // Commit the transaction
+            session.getTransaction().commit();
+            session.close();
+        }
+        catch (Exception exception) {
+            if (session != null) {
+                session.getTransaction().rollback();
+            }
+            System.err.println("An error occured, changes have been rolled back.");
+            exception.printStackTrace();
         }
     }
 
