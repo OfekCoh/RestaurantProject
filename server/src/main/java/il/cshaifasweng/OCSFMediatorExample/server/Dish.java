@@ -14,21 +14,30 @@ public class Dish {
     private int price;
     private String name;
     private String description;
-    private boolean isChainDish;
-    private String ingredients;
-//    private String image;
+
+    //@ManyToOne
+    //@JoinColumn(name = "branch_id", referencedColumnName = "id")
+    private int branchID;
+
+    @ElementCollection
+    //@CollectionTable(name = "dish_ingredients", joinColumns = @JoinColumn(name = "dish_id"))
+    @Column(name = "ingredients")
+    private List<String> ingredients;
+//    private String ingredients;
+    private String image;
 
 //    private static List<Dish> chainDishes = new ArrayList<>();  // chain-wide dishes
 
 
     public Dish() {}
 
-    public Dish(int price, String name, String description, boolean isChainDish, String ingredients) {
+    public Dish(int price, String name, String description, int branchID, List<String> ingredients) {
         this.price = price;
         this.name = name;
         this.description = description;
-        this.isChainDish = isChainDish;
+        this.branchID = branchID;
         this.ingredients = ingredients;
+        this.image = "";
     }
 
     public int getId() {
@@ -59,26 +68,26 @@ public class Dish {
         this.description = description;
     }
 
-    public boolean getIsChainDish() {
-        return isChainDish;
+    public int getBranchID() {
+        return branchID;
     }
 
-    public void setIsChainDish(boolean isChainDish) {
-        this.isChainDish = isChainDish;
+    public void setBranchID(int branchID) {
+        this.branchID = branchID;
     }
 
-    public String getingredients() {
+    public List<String> getIngredients() {
         return ingredients;
     }
 
-    public void setingredients(String ingredients) {
+    public void setIngredients(List<String> ingredients) {
         this.ingredients = ingredients;
     }
 
     public static List<Dish> getChainDishes(org.hibernate.Session session) {
 //        chainDishes = session.createQuery("FROM Dish WHERE isChainDish = true", Dish.class).getResultList();  // get chain dishes from db
 //        return chainDishes;
-        return session.createQuery("FROM Dish WHERE isChainDish = true", Dish.class).getResultList();  // get chain dishes from db
+        return session.createQuery("FROM Dish WHERE branchID = 0", Dish.class).getResultList();  // get chain dishes from db
     }
 
     // remove dish by object
@@ -96,17 +105,19 @@ public class Dish {
         }
     }
 
-//    public String getImage(){
-//        return image;
-//    }
-//
-//    public void setImage(String image){
-//        this.image=image;
-//    }
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
 
     @Override
     public String toString() {
         return "Dish{" + "id=" + id + "} ";
     }
+
+    
 
 }

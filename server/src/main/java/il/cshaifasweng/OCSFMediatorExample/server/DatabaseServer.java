@@ -75,7 +75,7 @@ public class DatabaseServer {
 
         // add another special dish to branch1
         RestaurantBranch branch = session.get(RestaurantBranch.class, 1);
-        Dish specialDish = new Dish(40,"Cake","goodie goodie chocolate cake.", false, "special love.");
+        Dish specialDish = new Dish(40,"Cake","goodie goodie chocolate cake.", 1, Arrays.asList("special love."));
         session.save(specialDish);
         branch.addDishToMenu(specialDish);
 
@@ -99,9 +99,11 @@ public class DatabaseServer {
                 "Traditional pizza with fresh mozzarella and basil.",
                 "Salmon fillet glazed with sweet honey and seared to perfection."};
 
+//        Dish dish = new Dish(50, "Burger", "Classic beef burger", false, Arrays.asList("Bun", "Beef Patty", "Lettuce", "Tomato", "Cheese"));
+
         // Create branches with default chain menu
         for (int i = 0; i < dishNames.length; i++) {
-            Dish chainDish = new Dish(prices[i],dishNames[i],descriptions[i],true,"normal dish, not spicy.");
+            Dish chainDish = new Dish(prices[i],dishNames[i],descriptions[i],0, Arrays.asList("normal dish, not spicy."));
 
 //            Dish.addChainDish(chainDish);  // Add the dish to the static chain-wide dishes list
 

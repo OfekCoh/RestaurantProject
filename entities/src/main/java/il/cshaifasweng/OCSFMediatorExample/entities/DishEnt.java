@@ -1,6 +1,7 @@
 package il.cshaifasweng.OCSFMediatorExample.entities;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class DishEnt implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -8,12 +9,12 @@ public class DishEnt implements Serializable {
     private int id;
     private String name;
     private String description;
-    private String ingredients;
+    private List<String> ingredients;
     private int price;
 
     public DishEnt() {}
 
-    public DishEnt(int id, String name, String description, String ingredients, int price) {
+    public DishEnt(int id, String name, String description, List<String> ingredients, int price) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -45,11 +46,11 @@ public class DishEnt implements Serializable {
         this.description = description;
     }
 
-    public String getIngredients() {
+    public List<String> getIngredients() {
         return ingredients;
     }
 
-    public void setIngredients(String ingredients) {
+    public void setIngredients(List<String> ingredients) {
         this.ingredients = ingredients;
     }
 

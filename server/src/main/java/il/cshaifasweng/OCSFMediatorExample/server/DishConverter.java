@@ -12,8 +12,10 @@ public class DishConverter {
                 dish.getId(),
                 dish.getName(),
                 dish.getDescription(),
-                dish.getingredients(),
+                dish.getIngredients(),
                 dish.getPrice()
         )).collect(Collectors.toList());
     }
+
+
 }
