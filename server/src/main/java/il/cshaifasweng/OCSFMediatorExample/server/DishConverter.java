@@ -8,13 +8,23 @@ import java.util.stream.Collectors;
 public class DishConverter {
 
     public static List<DishEnt> convertToDishEntList(List<Dish> dishes) {
-        return dishes.stream().map(dish -> new DishEnt(
-                dish.getId(),
-                dish.getName(),
-                dish.getDescription(),
-                dish.getIngredients(),
-                dish.getPrice()
-        )).collect(Collectors.toList());
+        return dishes.stream()
+                .map(dish -> {
+                    // Pull out the List<String> first
+                    List<String> ingredients = dish.getIngredients();
+                    // Convert it to String[]
+                    String[] ingredientsArr = ingredients.toArray(new String[ingredients.size()]);
+
+                    // Now create the DishEnt
+                    return new DishEnt(
+                            dish.getId(),
+                            dish.getName(),
+                            dish.getDescription(),
+                            ingredientsArr,
+                            dish.getPrice()
+                    );
+                })
+                .collect(Collectors.toList());
     }
 
 

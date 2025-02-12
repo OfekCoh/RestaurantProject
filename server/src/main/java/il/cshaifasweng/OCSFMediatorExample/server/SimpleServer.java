@@ -69,7 +69,7 @@ public class SimpleServer extends AbstractServer {
             String[] splitMessage = msgString.split(" ");
             int id = Integer.parseInt(splitMessage[1]);
             int price = Integer.parseInt(splitMessage[3]);
-
+            System.out.println(id + " " + price);
             //We update the price
             //We send update success
 			//We send the menu again for the client.

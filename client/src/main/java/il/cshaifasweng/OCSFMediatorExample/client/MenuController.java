@@ -47,9 +47,14 @@ public class MenuController {
 
     @Subscribe
     public void onMenuEvent(MenuEvent event) {
-        dishList.clear();
-        dishList.addAll(event.getMenu().getListDishes());
-        tableView.setItems(dishList);
+        System.out.println("onMenuEvent called! Updating table...");
+        Platform.runLater(() -> {
+            dishList.clear();
+            dishList.addAll(event.getMenu().getListDishes());
+            tableView.setItems(dishList);
+            // Optionally force a refresh:
+            tableView.refresh();
+        });
     }
 
     @FXML
@@ -68,6 +73,13 @@ public class MenuController {
         descriptionColumn.setCellValueFactory(new PropertyValueFactory<>("description"));
         ingredientsColumn.setCellValueFactory(new PropertyValueFactory<>("ingredients"));
         priceColumn.setCellValueFactory(new PropertyValueFactory<>("price"));
+
+        ingredientsColumn.setCellValueFactory(cellData -> {
+            String[] arr = cellData.getValue().getIngredients();
+            // Safely handle null or empty
+            String joined = (arr == null) ? "" : String.join(", ", arr);
+            return new javafx.beans.property.SimpleStringProperty(joined);
+        });
 
         // Enable editing for the price column
         tableView.setEditable(true);

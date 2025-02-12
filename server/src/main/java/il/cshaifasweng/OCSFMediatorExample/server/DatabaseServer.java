@@ -70,14 +70,65 @@ public class DatabaseServer {
     }
 
     private static void createDatabase(Session session) throws Exception {
-        generateChainDishes();
-        generateBranches();
+        /**
+         * Branches Generation
+         */
+
+        Menu menu1 = new Menu();
+        Menu menu2 = new Menu();
+
+        RestaurantBranch branch1 = new RestaurantBranch("Downtown Branch", "123 Main St, Cityville", menu1);
+        RestaurantBranch branch2 = new RestaurantBranch("Uptown Branch", "456 Elm St, Metro City", menu2);
+
+
+        session.save(branch1);
+        session.save(branch2);
+        session.flush();
+
+        /**
+         * Dish Generation
+         */
+
+        // Chain-wide dishes (Branch ID 0)
+        Dish dish1 = new Dish(15, "French Fries", "Crispy golden fries with a side of ketchup.", 0, Arrays.asList("Potatoes", "Salt", "Oil"));
+        Dish dish2 = new Dish(12, "Garlic Bread", "Toasted bread with garlic and butter.", 0, Arrays.asList("Bread", "Butter", "Garlic"));
+        Dish dish3 = new Dish(20, "Spaghetti Bolognese", "Traditional Italian pasta with meat sauce.", 0, Arrays.asList("Pasta", "Ground Beef", "Tomato Sauce", "Parmesan"));
+        Dish dish4 = new Dish(18, "Greek Salad", "Fresh vegetables with feta cheese and olives.", 0, Arrays.asList("Lettuce", "Tomatoes", "Feta Cheese", "Olives"));
+
+        session.save(dish1);
+        session.save(dish2);
+        session.save(dish3);
+        session.save(dish4);
+        session.flush();
+
+        // Branch-specific dishes (Branch ID 1)
+        Dish dish5 = new Dish(25, "Margherita Pizza", "Classic Italian pizza with fresh tomatoes and basil.", 1, Arrays.asList("Tomato", "Mozzarella", "Basil"));
+        Dish dish6 = new Dish(30, "Caesar Salad", "Crispy romaine lettuce with Caesar dressing and parmesan.", 1, Arrays.asList("Lettuce", "Croutons", "Parmesan", "Caesar Dressing"));
+        Dish dish7 = new Dish(28, "Grilled Salmon", "Freshly grilled salmon with lemon butter sauce.", 1, Arrays.asList("Salmon", "Lemon", "Butter", "Garlic"));
+
+        session.save(dish5);
+        session.save(dish6);
+        session.save(dish7);
+        session.flush();
+
+        // Branch-specific dishes (Branch ID 2)
+        Dish dish8 = new Dish(22, "BBQ Chicken Wings", "Spicy and tangy chicken wings with BBQ sauce.", 2, Arrays.asList("Chicken", "BBQ Sauce", "Spices"));
+        Dish dish9 = new Dish(10, "Mozzarella Sticks", "Fried mozzarella sticks with marinara sauce.", 2, Arrays.asList("Mozzarella", "Breadcrumbs", "Marinara Sauce"));
+        Dish dish10 = new Dish(35, "Ribeye Steak", "Juicy ribeye steak served with mashed potatoes.", 2, Arrays.asList("Beef", "Potatoes", "Butter"));
+
+        session.save(dish8);
+        session.save(dish9);
+        session.save(dish10);
+        session.flush();
+
+//        generateChainDishes();
+//        generateBranches();
 
         // add another special dish to branch1
-        RestaurantBranch branch = session.get(RestaurantBranch.class, 1);
-        Dish specialDish = new Dish(40,"Cake","goodie goodie chocolate cake.", 1, Arrays.asList("special love."));
-        session.save(specialDish);
-        branch.addDishToMenu(specialDish);
+//        RestaurantBranch branch = session.get(RestaurantBranch.class, 1);
+//        Dish specialDish = new Dish(40,"Cake","goodie goodie chocolate cake.", 1, Arrays.asList("special love."));
+//        session.save(specialDish);
+//        branch.addDishToMenu(specialDish);
 
 //        Dish.removeDish(2,session);
 //        List<Dish> allDishes = session.createQuery("FROM Dish", Dish.class).getResultList();
@@ -86,83 +137,30 @@ public class DatabaseServer {
 //        }
     }
 
-    private static void generateChainDishes() throws Exception {
-        String[] dishNames = {"Spicy Garlic Noodles",
-                "Grilled Lemon Herb Chicken",
-                "Truffle Mushroom Risotto",
-                "Classic Margherita Pizza",
-                "Crispy Honey Glazed Salmon"};
-        int[] prices = {32,49,45,38,40};
-        String[] descriptions = {"Savory noodles tossed in a spicy garlic sauce.",
-                "Juicy chicken grilled with lemon and herbs.",
-                "Creamy risotto with truffle and mushrooms.",
-                "Traditional pizza with fresh mozzarella and basil.",
-                "Salmon fillet glazed with sweet honey and seared to perfection."};
 
-//        Dish dish = new Dish(50, "Burger", "Classic beef burger", false, Arrays.asList("Bun", "Beef Patty", "Lettuce", "Tomato", "Cheese"));
-
-        // Create branches with default chain menu
-        for (int i = 0; i < dishNames.length; i++) {
-            Dish chainDish = new Dish(prices[i],dishNames[i],descriptions[i],0, Arrays.asList("normal dish, not spicy."));
-
-//            Dish.addChainDish(chainDish);  // Add the dish to the static chain-wide dishes list
-
-            session.save(chainDish);
-            session.flush();
-        }
-    }
-
-    private static void generateBranches() throws Exception {
-        String[] branchNames = {"First & Best Branch"};
-        String[] locations = {"boulevard of broken dreams"};
-
-        // Create branches with default chain menu
-        for (int i = 0; i < branchNames.length; i++) {
-            Menu chainMenu = new Menu();
-            RestaurantBranch branch = new RestaurantBranch(branchNames[i],locations[i],chainMenu);
-
-            session.save(chainMenu);
-            session.save(branch);
-            /*
-             * The call to session.flush() updates the DB immediately without ending the transaction.
-             * Recommended to do after an arbitrary unit of work.
-             * MANDATORY to do if you are saving a large amount of data - otherwise you may get cache errors.
-             */
-            session.flush();
-        }
-    }
-
-    private static List<Dish> getAllDishes() throws Exception {
+    public static List<Dish> getAllDishes(Session session) {
+        // now we accept a session parameter
         CriteriaBuilder builder = session.getCriteriaBuilder();
         CriteriaQuery<Dish> query = builder.createQuery(Dish.class);
         query.from(Dish.class);
-        List<Dish> data = session.createQuery(query).getResultList();
-        return data;
+        return session.createQuery(query).getResultList();
     }
-
     public static List<DishEnt> getMenu() throws Exception {
         List<DishEnt> dishes = null;
-        try {
-            SessionFactory sessionFactory = getSessionFactory(DatabaseServer.password);
-            session = sessionFactory.openSession();
+
+        try (Session session = getSessionFactory(DatabaseServer.password).openSession()) {
             session.beginTransaction();
-            // start code here
-            getAllDishes().toString();
-            dishes = convertToDishEntList(getAllDishes());
 
-            session.getTransaction().commit(); // Save everything.
+            // pass the *local* session, not the static field
+            List<Dish> allDishes = getAllDishes(session);
+            dishes = convertToDishEntList(allDishes);
 
-        } catch (Exception exception) {
-            if (session != null) {
-                session.getTransaction().rollback();
-            }
-            System.err.println("An error occured, changes have been rolled back.");
-            exception.printStackTrace();
-        } finally {
-            session.close();
+            session.getTransaction().commit();
         }
+
         return dishes;
     }
+
 
     /*
      * This method updates the price of the specific dish with the id to the new price
@@ -171,6 +169,7 @@ public class DatabaseServer {
      * @throws Exception - in case we didn't succeed in updating
      */
     public static void updatePriceForDish(int id, int price) throws Exception {
+        Session session = null; // Ensure session is managed correctly
         try {
 
 

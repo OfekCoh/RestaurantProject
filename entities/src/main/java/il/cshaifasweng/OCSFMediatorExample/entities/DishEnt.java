@@ -1,7 +1,7 @@
 package il.cshaifasweng.OCSFMediatorExample.entities;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Arrays;
 
 public class DishEnt implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -9,16 +9,16 @@ public class DishEnt implements Serializable {
     private int id;
     private String name;
     private String description;
-    private List<String> ingredients;
+    private String[] ingredients; // Change from List<String> to String[]
     private int price;
 
     public DishEnt() {}
 
-    public DishEnt(int id, String name, String description, List<String> ingredients, int price) {
+    public DishEnt(int id, String name, String description, String[] ingredients, int price) {
         this.id = id;
         this.name = name;
         this.description = description;
-        this.ingredients = ingredients;
+        this.ingredients = ingredients;  // a String[]
         this.price = price;
     }
 
@@ -46,11 +46,11 @@ public class DishEnt implements Serializable {
         this.description = description;
     }
 
-    public List<String> getIngredients() {
+    public String[] getIngredients() {  // Updated to return an array
         return ingredients;
     }
 
-    public void setIngredients(List<String> ingredients) {
+    public void setIngredients(String[] ingredients) {
         this.ingredients = ingredients;
     }
 
@@ -60,5 +60,16 @@ public class DishEnt implements Serializable {
 
     public void setPrice(int price) {
         this.price = price;
+    }
+
+    @Override
+    public String toString() {
+        return "DishEnt{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", ingredients=" + Arrays.toString(ingredients) +
+                ", price=" + price +
+                '}';
     }
 }

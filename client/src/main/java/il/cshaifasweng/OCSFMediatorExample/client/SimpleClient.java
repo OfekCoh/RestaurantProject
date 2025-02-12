@@ -23,9 +23,14 @@ public class SimpleClient extends AbstractClient {
     @Override
     protected void handleMessageFromServer(Object msg) {
         if(msg.getClass().equals(MenuEnt.class)) {
-//            System.out.println("Menu Message: "+msg);
+            System.out.println("Menu Message: "+msg);
             MenuEnt menu = (MenuEnt) msg;
             DishList=menu.getListDishes();
+            for(DishEnt dishEnt : DishList) {
+                System.out.println(dishEnt.toString());
+            }
+
+            System.out.println(DishList.toArray().toString());
             EventBus.getDefault().post(new MenuEvent((MenuEnt) msg));
         }
         else if (msg.getClass().equals(Warning.class)) {
