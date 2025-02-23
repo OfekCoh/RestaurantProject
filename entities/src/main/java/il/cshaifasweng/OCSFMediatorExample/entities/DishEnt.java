@@ -10,16 +10,38 @@ public class DishEnt implements Serializable {
     private String name;
     private String description;
     private String[] ingredients; // Change from List<String> to String[]
-    private int price;
+    private String image;
+    private double price;
+    private int branchID;
 
-    public DishEnt() {}
+    private double salePrice;
+    private boolean isSalePrice;
 
-    public DishEnt(int id, String name, String description, String[] ingredients, int price) {
+    public DishEnt() {
+    }
+
+    //To send to the server side, since the database assign the id.
+    public DishEnt(String name, String description, String[] ingredients, double price, int branchID, String image, boolean isSalePrice, double salePrice) {
+        this.name = name;
+        this.description = description;
+        this.ingredients = ingredients;  // a String[]!
+        this.price = price;
+        this.branchID = branchID;
+        this.image = image;
+        this.isSalePrice = isSalePrice;
+        this.salePrice = salePrice;
+    }
+
+    public DishEnt(int id, String name, String description, String[] ingredients, double price, int branchID, String image, boolean isSalePrice, double salePrice) {
         this.id = id;
         this.name = name;
         this.description = description;
-        this.ingredients = ingredients;  // a String[]
+        this.ingredients = ingredients;  // a String[]!
         this.price = price;
+        this.branchID = branchID;
+        this.image = image;
+        this.isSalePrice = isSalePrice;
+        this.salePrice = salePrice;
     }
 
     public int getId() {
@@ -54,12 +76,44 @@ public class DishEnt implements Serializable {
         this.ingredients = ingredients;
     }
 
-    public int getPrice() {
+    public double getPrice() {
         return price;
     }
 
-    public void setPrice(int price) {
+    public void setPrice(double price) {
         this.price = price;
+    }
+
+    public int getBranchID() {
+        return branchID;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
+    public void setBranchID(int branchID) {
+        this.branchID = branchID;
+    }
+
+    public double getSalePrice() {
+        return salePrice;
+    }
+
+    public void setSalePrice(double salePrice) {
+        this.salePrice = salePrice;
+    }
+
+    public boolean getIsSalePrice() {
+        return isSalePrice;
+    }
+
+    public void setSalePrice(boolean salePriceActive) {
+        this.isSalePrice = salePriceActive;
     }
 
     @Override
@@ -70,6 +124,12 @@ public class DishEnt implements Serializable {
                 ", description='" + description + '\'' +
                 ", ingredients=" + Arrays.toString(ingredients) +
                 ", price=" + price +
+                ", branchID=" + branchID +
+//                ", image='" + image + '\'' +
+                ", salePrice=" + salePrice +
+                ", isSalePrice=" + isSalePrice +
                 '}';
     }
+
+
 }

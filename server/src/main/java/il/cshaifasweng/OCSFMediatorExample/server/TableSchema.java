@@ -10,8 +10,9 @@ public class TableSchema {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int tableId; // Unique ID for each table
 
-    @Column(nullable = false)
-    private int branchId; // Branch number where the table is located
+    @ManyToOne
+    @JoinColumn(name = "branch_id")
+    private RestaurantBranch branch;
 
     @Column(nullable = false)
     private int numberOfDiners; // Number of seats
@@ -22,16 +23,21 @@ public class TableSchema {
 
     public TableSchema() {}
 
-    public TableSchema(int branchId, int numberOfDiners, LocationType location) {
-        this.branchId = branchId;
+    public TableSchema(RestaurantBranch branch, int numberOfDiners, LocationType location) {
+        this.branch = branch;
         this.numberOfDiners = numberOfDiners;
         this.location = location;
     }
 
     public int getTableId() { return tableId; }
 
-    public int getBranchId() { return branchId; }
-    public void setBranchId(int branchId) { this.branchId = branchId; }
+    public RestaurantBranch getBranch() {
+        return branch;
+    }
+
+    public void setBranch(RestaurantBranch branch) {
+        this.branch = branch;
+    }
 
     public int getNumberOfDiners() { return numberOfDiners; }
     public void setNumberOfDiners(int numberOfDiners) { this.numberOfDiners = numberOfDiners; }
@@ -41,7 +47,7 @@ public class TableSchema {
 
     @Override
     public String toString() {
-        return "TableEntity{" + "tableId=" + tableId + ", branchId=" + branchId +
+        return "TableEntity{" + "tableId=" + tableId + ", branch_id=" + branch +
                 ", numberOfDiners=" + numberOfDiners + ", location=" + location + "}";
     }
 }

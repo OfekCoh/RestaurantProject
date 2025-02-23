@@ -1,32 +1,51 @@
 package il.cshaifasweng.OCSFMediatorExample.server;
+
 import javax.persistence.*;
 import java.util.List;
-import java.util.ArrayList;
-
 
 @Entity
-@Table(name = "branches")
+@Table(name = "restaurant_branches")
 public class RestaurantBranch {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    private String branchName;
-    private String location;
 
-    // cascade- changes update to both, orphan- if no branch menu is deleted
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "menu_id", referencedColumnName = "id")
-    private Menu menu;
+    @Column(nullable = false)
+    private String branchName; // e.g. "Downtown Branch"
+
+    @Column(nullable = false)
+    private String location;   // e.g. "123 Main St."
+
+    /**
+     * Stores opening hours as a list of 7 strings (one for each day).
+     * Example usage: openingHours.get(0) -> Monday's hours, etc.
+     *
+     * This creates a separate table "branch_opening_hours" under the hood,
+     * but from your perspective, it's just a List<String> in the entity.
+     */
+    @ElementCollection
+    @CollectionTable(
+            name = "branch_opening_hours",
+            joinColumns = @JoinColumn(name = "branch_id")
+    )
+    @Column(name = "day_hours")
+    private List<String> openingHours;
+    // Example content: ["08:00-16:00","08:00-16:00","08:00-16:00","08:00-16:00","08:00-22:00","09:00-22:00","Closed"]
+
+    /**
+     * One branch can have multiple tables.
+     * We assume TableSchema has a 'branch' field annotated with @ManyToOne.
+     */
+    @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TableSchema> tables;
 
     public RestaurantBranch() {}
 
-    public RestaurantBranch(String branchName, String location, Menu menu) {
+    public RestaurantBranch(String branchName, String location, List<String> openingHours) {
         this.branchName = branchName;
         this.location = location;
-        this.menu = menu;
-        if (menu != null) {
-            menu.setBranch(this);
-        }
+        this.openingHours = openingHours;
     }
 
     public int getId() {
@@ -36,7 +55,6 @@ public class RestaurantBranch {
     public String getBranchName() {
         return branchName;
     }
-
     public void setBranchName(String branchName) {
         this.branchName = branchName;
     }
@@ -44,34 +62,32 @@ public class RestaurantBranch {
     public String getLocation() {
         return location;
     }
-
     public void setLocation(String location) {
         this.location = location;
     }
 
-    public Menu getMenu() {
-        return menu;
+    public List<String> getOpeningHours() {
+        return openingHours;
+    }
+    public void setOpeningHours(List<String> openingHours) {
+        this.openingHours = openingHours;
     }
 
-    public List<Dish> getAllDishesInBranch(org.hibernate.Session session) {
-        List<Dish> allDishes = new ArrayList<>(Dish.getChainDishes(session)); // Add chain-wide dishes
-        allDishes.addAll(menu.getDishes());                           // Add branch-specific dishes
-        return allDishes;
+    public List<TableSchema> getTables() {
+        return tables;
+    }
+    public void setTables(List<TableSchema> tables) {
+        this.tables = tables;
     }
 
-    public void setMenu(Menu menu) {
-        this.menu = menu;
-        if (menu != null) {
-            menu.setBranch(this);
-        }
+    @Override
+    public String toString() {
+        return "RestaurantBranch{" +
+                "id=" + id +
+                ", branchName='" + branchName + '\'' +
+                ", location='" + location + '\'' +
+                ", openingHours=" + openingHours +
+                ", tablesCount=" + (tables != null ? tables.size() : 0) +
+                '}';
     }
-
-    public void addDishToMenu(Dish dish) {
-        menu.addDishToMenu(dish);
-    }
-
-    public void removeDish(Dish dish) {
-        menu.removeDish(dish);
-    }
-
 }

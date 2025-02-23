@@ -1,7 +1,7 @@
 package il.cshaifasweng.OCSFMediatorExample.server;
+
 import javax.persistence.*;
 import java.util.List;
-import java.util.ArrayList;
 
 @Entity
 @Table(name = "dishes")
@@ -11,44 +11,57 @@ public class Dish {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    private int price;
+    private double price;
     private String name;
     private String description;
-
-    //@ManyToOne
-    //@JoinColumn(name = "branch_id", referencedColumnName = "id")
     private int branchID;
 
     @ElementCollection
-    //@CollectionTable(name = "dish_ingredients", joinColumns = @JoinColumn(name = "dish_id"))
     @Column(name = "ingredients")
     private List<String> ingredients;
-//    private String ingredients;
+
+    @Lob
+    @Column(name = "image", columnDefinition = "LONGTEXT") // Stores Base64 images properly
     private String image;
 
-//    private static List<Dish> chainDishes = new ArrayList<>();  // chain-wide dishes
+    private double salePrice;
+    private boolean isSalePrice;
 
+    public Dish() {
+    }
 
-    public Dish() {}
-
-    public Dish(int price, String name, String description, int branchID, List<String> ingredients) {
+    public Dish(double price, String name, String description, int branchID, List<String> ingredients, String image) {
         this.price = price;
         this.name = name;
         this.description = description;
         this.branchID = branchID;
         this.ingredients = ingredients;
-        this.image = "";
+        this.image = image;
+        this.salePrice = 0;
+        this.isSalePrice = false;
+    }
+
+
+    public Dish(double price, String name, String description, int branchID, List<String> ingredients, String image, double salePrice, boolean isSalePrice) {
+        this.price = price;
+        this.name = name;
+        this.description = description;
+        this.branchID = branchID;
+        this.ingredients = ingredients;
+        this.image = image;
+        this.salePrice = salePrice;
+        this.isSalePrice = isSalePrice;
     }
 
     public int getId() {
         return id;
     }
 
-    public int getPrice() {
+    public double getPrice() {
         return price;
     }
 
-    public void setPrice(int price) {
+    public void setPrice(double price) {
         this.price = price;
     }
 
@@ -84,40 +97,47 @@ public class Dish {
         this.ingredients = ingredients;
     }
 
-    public static List<Dish> getChainDishes(org.hibernate.Session session) {
-//        chainDishes = session.createQuery("FROM Dish WHERE isChainDish = true", Dish.class).getResultList();  // get chain dishes from db
-//        return chainDishes;
-        return session.createQuery("FROM Dish WHERE branchID = 0", Dish.class).getResultList();  // get chain dishes from db
-    }
-
-    // remove dish by object
-    public static void removeDish(Dish dish, org.hibernate.Session session) {
-        session.delete(dish);
-    }
-
-    // remove dish by id
-    public static void removeDish(int id, org.hibernate.Session session) {
-        Dish dish = session.get(Dish.class, id);
-        if (dish != null) {
-            session.delete(dish);
-        } else {
-            System.out.print("Remove Failed: Dish with id " + id + " not found.\n");
-        }
-    }
-
     public String getImage() {
         return image;
     }
 
     public void setImage(String image) {
         this.image = image;
+
+    }
+
+    public double getSalePrice() {
+        return salePrice;
+    }
+
+    public void setSalePrice(double salePrice) {
+        this.salePrice = salePrice;
+    }
+
+    public boolean isSalePrice() {
+        return isSalePrice;
+    }
+
+    public void setIsSalePrice(boolean isSalePrice) {
+        this.isSalePrice = isSalePrice;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     @Override
     public String toString() {
-        return "Dish{" + "id=" + id + "} ";
+        return "Dish{" +
+                "id=" + id +
+                ", price=" + price +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", branchID=" + branchID +
+                ", ingredients=" + ingredients +
+//                ", image='" + image + '\'' +
+                ", salePrice=" + salePrice +
+                ", isSalePrice=" + isSalePrice +
+                '}';
     }
-
-    
-
 }

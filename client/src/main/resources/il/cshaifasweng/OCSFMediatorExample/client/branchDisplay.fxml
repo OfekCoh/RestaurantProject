@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="il.cshaifasweng.OCSFMediatorExample.client.BranchController">
+    <children>
+        <VBox spacing="10" alignment="CENTER" prefWidth="800" prefHeight="600" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+            <Label text="Branch Information" style="-fx-font-size: 20px; -fx-font-weight: bold;" />
+            <TableView fx:id="tableView" prefHeight="500" prefWidth="780">
+                <columns>
+                    <TableColumn fx:id="idColumn" text="ID" minWidth="50" />
+                    <TableColumn fx:id="nameColumn" text="Branch Name" minWidth="150" />
+                    <TableColumn fx:id="descriptionColumn" text="Location" minWidth="200" />
+                    <TableColumn fx:id="openingHoursColumn" text="Opening Hours" minWidth="200" />
+                    <TableColumn fx:id="tableColumn" text="Tables" minWidth="100" />
+                </columns>
+            </TableView>
+            <Button fx:id="backButton" text="Back" onAction="#switchToMenu" prefWidth="100" />
+        </VBox>
+    </children>
+</AnchorPane>

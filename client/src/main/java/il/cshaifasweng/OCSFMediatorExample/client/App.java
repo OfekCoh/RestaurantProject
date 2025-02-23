@@ -7,6 +7,9 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Button;
+import javafx.scene.control.ToolBar;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -19,20 +22,44 @@ import org.greenrobot.eventbus.Subscribe;
  */
 public class App extends Application {
 
+    private static Stage primaryStage;
+    private static BorderPane rootLayout;
+    private static ToolBar globalToolBar;
+
     private static Scene scene;
     public SimpleClient client;
 
     @Override
     public void start(Stage stage) throws IOException {
+        primaryStage = stage;
+        rootLayout = new BorderPane();
+
+
+        globalToolBar = new ToolBar();
+        Button disconnectButton = new Button("Disconnect");
+        disconnectButton.setOnAction(e -> handleDisconnect());
+        globalToolBar.getItems().add(disconnectButton);
+        globalToolBar.setVisible(false); //Initially hidden
+        rootLayout.setTop(globalToolBar);
+
+        //Register for EventBus updates (login/logout/Warning)
         EventBus.getDefault().register(this);
-//        stage.setTitle("Resturant");
-        scene = new Scene(loadFXML("connect"), 640, 480);
-        stage.setScene(scene);
-        stage.show();
+
+        // Load the initial view (PrimaryController)
+
+//        primaryStage.setTitle("Resturant");
+//        scene = new Scene(loadFXML("connect"), 1000, 600);
+        scene = new Scene(rootLayout, 1000, 600);
+//        setRoot("primary");
+        primaryStage.setScene(scene);
+        setRoot("connect");
+
+        primaryStage.show();
     }
 
     static void setRoot(String fxml) throws IOException {
-        scene.setRoot(loadFXML(fxml));
+        rootLayout.setCenter(loadFXML(fxml));
+//        scene.setRoot(loadFXML(fxml));
     }
 
     private static Parent loadFXML(String fxml) throws IOException {
@@ -40,6 +67,36 @@ public class App extends Application {
         return fxmlLoader.load();
     }
 
+    private void handleDisconnect() {
+        try {
+            SimpleClient.getClient().sendLogoutCommand(SimpleClient.userID);
+            SimpleClient.userID = -1;
+            SimpleClient.ruleID = -1;
+            globalToolBar.setVisible(false);
+            setRoot("primary");
+            EventBus.getDefault().post(new LogoutEvent());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Subscribe
+    public void onLoginSuccess(LoginEvent event) {
+        Platform.runLater(() -> {
+            SimpleClient.userID = event.getUserID();
+            SimpleClient.ruleID = event.getRuleID();
+            globalToolBar.setVisible(true);
+        });
+    }
+
+    @Subscribe
+    public void onLogout(LogoutEvent event) {
+        Platform.runLater(() -> {
+            SimpleClient.userID = -1;
+            SimpleClient.ruleID = -1;
+            globalToolBar.setVisible(false); //Hide toolbar when logged out
+        });
+    }
 
 
     @Override
@@ -49,6 +106,10 @@ public class App extends Application {
         if (client != null) {
             client.sendToServer("remove client");
             client.closeConnection();
+        }
+        //Logout in case user is logged in (when we close the app).
+        if(SimpleClient.userID!=-1){
+            SimpleClient.getClient().sendLogoutCommand(SimpleClient.userID);
         }
 		super.stop();
         Platform.exit(); // Forcefully exit JavaFX platform
