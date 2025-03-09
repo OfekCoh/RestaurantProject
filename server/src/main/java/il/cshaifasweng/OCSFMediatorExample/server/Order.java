@@ -1,6 +1,7 @@
 package il.cshaifasweng.OCSFMediatorExample.server;
 
 import javax.persistence.*;
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -36,18 +37,23 @@ public class Order {
      * 3 = No refund
      * 4 = Completed
      */
+    private Date orderDate;
+    private double finalPrice;
     private int status;
+
 
     public Order() {
     }
 
     public Order(int selectedBranch, boolean isDelivery, List<Integer> dishes,
-                 List<String> adaptation, BuyerDetails buyerDetails) {
+                 List<String> adaptation, BuyerDetails buyerDetails, Date orderDate, double finalPrice) {
         this.selectedBranch = selectedBranch;
         this.isDelivery = isDelivery;
         this.dishes = dishes;
         this.adaptation = adaptation;
         this.buyerDetails = buyerDetails;
+        this.orderDate = orderDate;
+        this.finalPrice = finalPrice;
         this.status = 0; // default to "pending"
     }
 
@@ -77,6 +83,14 @@ public class Order {
         return buyerDetails;
     }
 
+    public Date getOrderDate() {
+        return orderDate;
+    }
+
+    public double getFinalPrice() {
+        return finalPrice;
+    }
+
     public int getStatus() {
         return status;
     }
@@ -103,6 +117,14 @@ public class Order {
 
     public void setBuyerDetails(BuyerDetails buyerDetails) {
         this.buyerDetails = buyerDetails;
+    }
+
+    public void setOrderDate(Date orderDate) {
+        this.orderDate = orderDate;
+    }
+
+    public void setFinalPrice(double finalPrice) {
+        this.finalPrice = finalPrice;
     }
 
     public void setStatus(int status) {

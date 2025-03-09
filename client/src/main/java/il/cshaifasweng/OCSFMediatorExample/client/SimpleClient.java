@@ -1,11 +1,15 @@
 package il.cshaifasweng.OCSFMediatorExample.client;
 
+import il.cshaifasweng.OCSFMediatorExample.client.Events.DishEvent;
+import il.cshaifasweng.OCSFMediatorExample.client.Events.LoginEvent;
+import il.cshaifasweng.OCSFMediatorExample.client.Events.MenuChangeEvent;
+import il.cshaifasweng.OCSFMediatorExample.client.Events.WarningEvent;
 import il.cshaifasweng.OCSFMediatorExample.entities.*;
+import javafx.application.Platform;
 import org.greenrobot.eventbus.EventBus;
 
 import il.cshaifasweng.OCSFMediatorExample.client.ocsf.AbstractClient;
 
-import javax.swing.event.MenuEvent;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
@@ -24,6 +28,7 @@ public class SimpleClient extends AbstractClient {
     private SimpleClient(String host, int port) {
         super(host, port);
     }
+
 
     @Override
     protected void handleMessageFromServer(Object msg) {
@@ -115,6 +120,19 @@ public class SimpleClient extends AbstractClient {
                     EventBus.getDefault().post(new MenuChangeEvent(menuChangeList));
                     break;
                 }
+                case "orderResponse": {
+                    System.out.println("Client: Order success!");
+                    System.out.println("Received orderResponse with " + payload[0] + " ID.");
+                    Platform.runLater(() -> {
+                        try {
+                            OrderSuccessController.setOrderID((int) payload[0]);
+                            App.setRoot("orderSuccess");
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    break;
+                }
 
                 // If you want server to respond with a "menuResponse" message, do it here
                 // case "menuResponse": { ... } break;
@@ -184,8 +202,6 @@ public class SimpleClient extends AbstractClient {
         }
     }
 
-
-
     public void sendUpdateDishCommand(DishEnt updatedDish) {
         System.out.println("Client: Update Dish: " + updatedDish);
         try {
@@ -196,16 +212,21 @@ public class SimpleClient extends AbstractClient {
             throw new RuntimeException(e);
         }
     }
+
     public void sendGetMenuChanges() throws Exception {
         Message message = new Message("get menuChanges", new Object[]{});
         sendToServer(message);
     }
 
     public void sendSetMenuUpdate(int menuChangeID, int dishID, double newPrice, boolean newIsOnSale, double newSalePrice, boolean status) throws IOException {
-        Message message = new Message("set menuChanges", new Object[]{menuChangeID,dishID,newPrice,newIsOnSale,newSalePrice,status});
+        Message message = new Message("set menuChanges", new Object[]{menuChangeID, dishID, newPrice, newIsOnSale, newSalePrice, status});
         sendToServer(message);
     }
 
+    public void sendAddOrder(List<Integer> dishIds, List<String> adaptaions, String orderType, int selectedBranch, Date orderDate, Double finalPrice, String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv) throws IOException {
+        Message message = new Message("add order", new Object[]{dishIds, adaptaions, orderType, selectedBranch, orderDate, finalPrice, name, address, phone, userId, cardNumber, month, year, cvv});
+        sendToServer(message);
+    }
 
     public void sendLoginCommand(String email, String password) throws Exception {
         Message message = new Message("login", new Object[]{email, password});

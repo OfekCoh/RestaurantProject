@@ -58,8 +58,7 @@ public class Convertor {
      */
     public static BranchEnt convertToBranchEnt(RestaurantBranch branch) {
         if (branch == null) return null;
-
-        System.out.println("Converting RestaurantBranch: " + branch.getBranchName());
+//        System.out.println("Converting RestaurantBranch: " + branch.getBranchName());
 
         // Convert tables
         List<TableEnt> tableEnts = convertToTableEntList(branch.getTables());

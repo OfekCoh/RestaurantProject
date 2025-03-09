@@ -1,5 +1,7 @@
 package il.cshaifasweng.OCSFMediatorExample.client;
 
+import il.cshaifasweng.OCSFMediatorExample.client.Events.DishEvent;
+import il.cshaifasweng.OCSFMediatorExample.client.Events.MenuChangeEvent;
 import il.cshaifasweng.OCSFMediatorExample.entities.BranchEnt;
 import il.cshaifasweng.OCSFMediatorExample.entities.DishEnt;
 import javafx.application.Platform;
@@ -8,10 +10,8 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.HBox;
 import il.cshaifasweng.OCSFMediatorExample.entities.MenuChangeEnt;
-import javafx.util.converter.NumberStringConverter;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
@@ -215,7 +215,6 @@ public class MenuUpdateController {
             private final Button approveButton = new Button("✔");
             private final Button rejectButton = new Button("✘");
             private final HBox buttonContainer = new HBox(5, approveButton, rejectButton);
-
             {
                 approveButton.setDisable(SimpleClient.ruleID != 4);
                 approveButton.setVisible(SimpleClient.ruleID == 4);

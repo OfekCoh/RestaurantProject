@@ -1,24 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="il.cshaifasweng.OCSFMediatorExample.client.DishDetailsController"
+            prefWidth="800" prefHeight="500"
+            style="-fx-background-color: #ffffff;">
 
-<AnchorPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="il.cshaifasweng.OCSFMediatorExample.client.DishDetailsController">
-    <children>
-        <VBox alignment="CENTER" prefHeight="600" prefWidth="800" spacing="10" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
-            <Label fx:id="dishNameLabel" style="-fx-font-size: 22px; -fx-font-weight: bold;" text="Dish Name" />
+    <!-- CART BUTTON IN TOP-RIGHT -->
+    <Button fx:id="cartButton"
+            layoutX="730" layoutY="10"
+            text="🛒 (0)"
+            onAction="#onCartButtonClick"
+            style="-fx-font-size: 14;" />
 
-            <ImageView fx:id="dishImageView" fitWidth="200" fitHeight="200" />
+    <!-- Dish Name -->
+    <Label fx:id="dishNameLabel"
+           layoutX="20" layoutY="20"
+           style="-fx-font-size: 22; -fx-font-weight: bold;" />
 
-            <Label fx:id="dishDescriptionLabel" style="-fx-font-size: 16px;" text="Description" />
-            <Label fx:id="dishIngredientsLabel" style="-fx-font-size: 16px;" text="Ingredients" />
-            <Label fx:id="dishPriceLabel" style="-fx-font-size: 16px;" text="Price" />
-            <Label fx:id="dishTypeLabel" style="-fx-font-size: 16px;" text="Dish Type" />
+    <!-- Dish Description -->
+    <Label fx:id="dishDescriptionLabel"
+           layoutX="20" layoutY="60"
+           style="-fx-wrap-text:true; -fx-font-size: 14;"
+           prefWidth="600" />
 
-            <Button fx:id="backButton" onAction="#onBackClick" prefWidth="200" text="Back to Menu" />
-        </VBox>
-    </children>
+    <!-- Ingredients -->
+    <Label fx:id="dishIngredientsLabel"
+           layoutX="20" layoutY="100"
+           style="-fx-wrap-text:true; -fx-font-size: 14;"
+           prefWidth="600" />
+
+    <!-- Price -->
+    <Label fx:id="dishPriceLabel"
+           layoutX="20" layoutY="140"
+           style="-fx-font-size:16; -fx-font-weight: bold;" />
+
+    <!-- Dish Type -->
+    <Label fx:id="dishTypeLabel"
+           layoutX="20" layoutY="180"
+           style="-fx-font-style: italic; -fx-text-fill: gray;" />
+
+    <!-- Dish Image -->
+    <ImageView fx:id="dishImageView"
+               layoutX="500" layoutY="50"
+               fitWidth="250" preserveRatio="true" />
+
+    <!-- QUANTITY ROW -->
+    <Label fx:id="quantityText"
+           layoutX="20" layoutY="220"
+           text="Quantity:"
+           style="-fx-font-size: 14;" />
+    <Label fx:id="quantityLabel"
+           layoutX="90" layoutY="220"
+           text="1"
+           style="-fx-font-size: 14; -fx-font-weight: bold; -fx-min-width: 20;" />
+    <Button fx:id="quantityMinusButton"
+            layoutX="130" layoutY="215"
+            text="-"
+            onAction="#onQuantityMinus"
+            style="-fx-pref-width: 32;" />
+    <Button fx:id="quantityPlusButton"
+            layoutX="170" layoutY="215"
+            text="+"
+            onAction="#onQuantityPlus"
+            style="-fx-pref-width: 32;" />
+
+    <!-- ADD TO CART -->
+    <Button fx:id="addToCartButton"
+            layoutX="220" layoutY="215"
+            text="Add to Cart"
+            onAction="#onAddToCart"
+            style="-fx-font-size: 14;" />
+
+    <!-- Adaptation Box: only shown if mode=order -->
+    <VBox fx:id="ingredientAdaptationBox"
+          layoutX="20" layoutY="270"
+          spacing="10"
+          style="-fx-padding:10; -fx-background-color:#fafafa; -fx-border-color:#ddd;" />
+
+    <!-- Back Button -->
+    <Button layoutX="20" layoutY="450"
+            text="Back"
+            onAction="#onBackClick" />
 </AnchorPane>

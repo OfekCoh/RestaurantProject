@@ -11,16 +11,13 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.ListCell;
 
 import java.io.IOException;
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class SelectDeliveryLocationController {
-    private static String selectedOrderType;
-
     @FXML
     private ComboBox<BranchEnt> branchComboBox;
 
@@ -32,10 +29,6 @@ public class SelectDeliveryLocationController {
 
     private DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
-
-    public static void setSelectedOrderType(String selectedOrderType) {
-        SelectDeliveryLocationController.selectedOrderType = selectedOrderType;
-    }
 
     @FXML
     public void initialize() {
@@ -198,12 +191,28 @@ public class SelectDeliveryLocationController {
             return;
         }
 
-        System.out.println("Selected branch: " + branch);
-        System.out.println("Selected date: " + date);
-        System.out.println("Selected time: " + time);
-        System.out.println("Selected Delivery type: "+selectedOrderType);
-        // Further processing...
+
+        /*
+         ------------------- OrderManage -----------------------
+        */
+        // Combine the selected date and time into a java.util.Date
+        LocalTime localTime = LocalTime.parse(time, timeFormatter);
+        LocalDateTime localDateTime = LocalDateTime.of(date, localTime);
+        Date orderDate = Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+//        System.out.println("Order Date: " + orderDate);
+        //Setting the orderDate
+        OrderManage.setOrderDate(orderDate);
+        //Setting the selected Branch for the order
+        OrderManage.setSelectedBranch(branch.getId());
+        //Forcing clear cart  - because different branches has different dishes.
+        OrderManage.clearCart();
+        /*
+         -------------------------------------------------------
+        */
+
+        // Further processing... (for the next panel).
         DishSelectionController.setSelectedBranch(branch.getId());
+        DishSelectionController.setSelectedBranchName(branch.getBranchName());
         DishSelectionController.setSelectedMode("order");
         App.setRoot("dishSelection");
     }
