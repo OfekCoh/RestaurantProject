@@ -9,6 +9,8 @@ import java.util.stream.IntStream;
 
 public class BuyerDetailsFormController {
 
+    private String callerType = "error recieving caller"; // who called me.
+
     @FXML
     private TextField nameField;
     @FXML
@@ -154,5 +156,13 @@ public class BuyerDetailsFormController {
     @FXML
     private void onBack() throws IOException {
         App.setRoot("cart");
+    }
+
+    // will be called from the caller window
+    public void setCallerType(String callerType) {
+        this.callerType = callerType;
+        if (nameField != null) {  // Ensure the field is initialized before setting text
+            nameField.setPromptText("caller is: " + callerType);
+        }
     }
 }
