@@ -63,7 +63,7 @@
     <Label text="CVV:" AnchorPane.leftAnchor="40.0" AnchorPane.topAnchor="370.0" />
     <TextField fx:id="cvvField" layoutX="144.0" layoutY="366.0" prefWidth="50.0" AnchorPane.leftAnchor="144.0" AnchorPane.topAnchor="366.0" />
    <Separator layoutX="20.0" layoutY="399.0" prefHeight="11.0" prefWidth="560.0" />
-   <Label fx:id="totalCostLabel" layoutX="21.0" layoutY="410.0" prefHeight="26.0" prefWidth="217.0" style="-fx-font-size: 16; -fx-font-weight: bold;" text="Total Cost: " />
+   <Label fx:id="totalCostLabel" layoutX="21.0" layoutY="410.0" prefHeight="26.0" prefWidth="548.0" style="-fx-font-size: 16; -fx-font-weight: bold;" text="Total Cost: " />
 
     <!-- SUBMIT & BACK BUTTONS -->
     <Button fx:id="submitButton" onAction="#onSubmit" style="-fx-font-size:14;" text="Submit" AnchorPane.bottomAnchor="20.0" AnchorPane.rightAnchor="100.0" />

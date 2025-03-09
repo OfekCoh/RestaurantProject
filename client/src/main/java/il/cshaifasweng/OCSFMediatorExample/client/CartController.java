@@ -12,8 +12,6 @@ import org.greenrobot.eventbus.Subscribe;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.stage.Stage;
-import javafx.scene.Scene;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -122,20 +120,15 @@ public class CartController {
             if (!OrderManage.getDishIds().isEmpty()) {
                 OrderManage.setFinalPrice(totalPrice);
                 System.out.println("FinalPrice: " + OrderManage.getFinalPrice());
-//                App.setRoot("buyerForm");
 
-                // LET THE FORM KNOW WHAT WINDOW CALLED HIM
+                // Pass to the form who called him, these 5 lines replace App.setRoot("buyerForm")
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/il/cshaifasweng/OCSFMediatorExample/client/buyerForm.fxml"));
-                Parent root = loader.load();
+                Parent root = loader.load(); // calls initialize
 
-                // Get the controller and set caller type
-                BuyerDetailsFormController controller = loader.getController();
+                BuyerDetailsFormController controller = loader.getController(); // Get the controller and set caller type
                 controller.setCallerType("cart");  // Pass "cart"
 
-                Stage stage = (Stage) checkoutButton.getScene().getWindow(); // Get current window
-                stage.setScene(new Scene(root));
-                stage.show();
-
+                App.getRootLayout().setCenter(root);
 
             } else {
                 Alert alert = new Alert(Alert.AlertType.INFORMATION,
