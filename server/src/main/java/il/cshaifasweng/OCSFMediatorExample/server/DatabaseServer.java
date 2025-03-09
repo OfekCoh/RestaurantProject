@@ -26,6 +26,7 @@ public class DatabaseServer {
                 userLogoutAll();
                 return;
             }
+            System.out.println("Initializing Database...");
             createDatabase(session);
             session.getTransaction().commit();
         } catch (Exception exception) {
@@ -38,6 +39,9 @@ public class DatabaseServer {
     private static SessionFactory getSessionFactory() throws HibernateException {
         if (sessionFactory == null) {
             Configuration configuration = new Configuration();
+            configuration.setProperty("hibernate.connection.password", password);
+
+            // Add ALL of your entities here. You can also try adding a whole package.
             configuration.addAnnotatedClass(RestaurantBranch.class);
             configuration.addAnnotatedClass(Dish.class);
             configuration.addAnnotatedClass(Worker.class);
@@ -128,6 +132,50 @@ public class DatabaseServer {
         session.save(w5);
         session.save(w6);
         session.flush();
+
+
+        /**
+         * Tables Generation
+         */
+
+        // Get total number of branches dynamically
+        Long numberOfBranches = (Long) session.createQuery("SELECT COUNT(b) FROM RestaurantBranch b").uniqueResult();
+
+        // Create tables for each branch
+        for (int branchId = 1; branchId <= numberOfBranches; branchId++) {
+
+            // Fetch the RestaurantBranch entity
+            RestaurantBranch branch = session.get(RestaurantBranch.class, branchId);
+
+            if (branch == null) {
+                System.out.println("Branch with ID " + branchId + " not found. Skipping...");
+                continue;
+            }
+
+            List<TableSchema> tables = new ArrayList<>();
+
+            // Creating 10 tables for 2 diners
+            for (int i = 0; i < 10; i++) {
+                tables.add(new TableSchema(branch, 2, (i % 2 == 0) ? LocationType.INDOOR : LocationType.OUTDOOR));
+            }
+
+            // Creating 5 tables for 3 diners
+            for (int i = 0; i < 5; i++) {
+                tables.add(new TableSchema(branch, 3, (i % 2 == 0) ? LocationType.INDOOR : LocationType.OUTDOOR));
+            }
+
+            // Creating 15 tables for 4 diners
+            for (int i = 0; i < 15; i++) {
+                tables.add(new TableSchema(branch, 4, (i % 2 == 0) ? LocationType.INDOOR : LocationType.OUTDOOR));
+            }
+
+            // Save all tables in the database
+            for (TableSchema table : tables) {
+                session.save(table);
+            }
+
+            session.flush();
+        }
 
     }
 
