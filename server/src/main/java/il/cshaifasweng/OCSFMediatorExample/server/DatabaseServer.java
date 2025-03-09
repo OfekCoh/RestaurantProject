@@ -131,6 +131,29 @@ public class DatabaseServer {
 
     }
 
+    public static boolean addComplaint(Complaint complaint) {
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            session.save(complaint);
+
+            if (session.contains(complaint)) { //Check if successfully added
+                transaction.commit();
+                return true;
+            } else {
+                transaction.rollback();
+                System.err.println("Failed to insert complaint: " + complaint);
+                return false;
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to add complaint: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
+
     public static List<RestaurantBranch> getAllBranches(Session session) throws Exception {
         CriteriaBuilder builder = session.getCriteriaBuilder();
         CriteriaQuery<RestaurantBranch> query = builder.createQuery(RestaurantBranch.class);
@@ -160,6 +183,28 @@ public class DatabaseServer {
         return menuChanges;
     }
 
+    public static List<Complaint> getAllComplaints(Session session) throws Exception {
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<Complaint> query = builder.createQuery(Complaint.class);
+        Root<Complaint> root = query.from(Complaint.class);
+
+        query.select(root).distinct(true); // Ensure distinct branches
+
+        List<Complaint> complaintsList = session.createQuery(query).getResultList();
+
+        return complaintsList;
+    }
+
+    public static List<ComplaintEnt> getComplaints() {
+        try (Session session = getSessionFactory().openSession()) {
+            List<Complaint> complaintsList = getAllComplaints(session);
+            return Convertor.convertToComplaintEntList(complaintsList);
+        } catch (Exception e) {
+            System.err.println("Error fetching complaints: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
     public static List<BranchEnt> getBranches() {
         try (Session session = getSessionFactory().openSession()) {
             List<RestaurantBranch> allBranches = getAllBranches(session);

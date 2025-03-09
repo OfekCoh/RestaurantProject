@@ -8,6 +8,7 @@ import il.cshaifasweng.OCSFMediatorExample.client.ocsf.AbstractClient;
 import javax.swing.event.MenuEvent;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 public class SimpleClient extends AbstractClient {
@@ -216,7 +217,11 @@ public class SimpleClient extends AbstractClient {
         sendToServer(message);
     }
 
-
+    // need to add buyer details?
+    public void sendComplaint(String complaintText, Date date, String name, String creditCardNumber) throws IOException {
+        Message message = new Message("complaint", new Object[]{complaintText, date, name, creditCardNumber});
+        sendToServer(message);
+    }
     public static SimpleClient getClient() {
         if (client == null) {
             client = new SimpleClient(ip, port);

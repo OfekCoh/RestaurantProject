@@ -16,21 +16,34 @@ public class Complaint {
     @Temporal(TemporalType.DATE)
     private Date date;
 
-    // Embeds BuyerDetails into the complaint table
-    @Embedded
-    private BuyerDetails buyerDetails;
+    private String name;
+    private String creditCardNumber;
 
     // Constructors
     public Complaint() {
     }
 
-    public Complaint(String complaint, Date date, BuyerDetails buyerDetails) {
+    public Complaint(String complaint, Date date, String creditCardNumber, String name) {
         this.complaint = complaint;
         this.date = date;
-        this.buyerDetails = buyerDetails;
+        this.creditCardNumber = creditCardNumber;
+        this.name = name;
+
     }
 
     // Getters and setters
+    public String getCreditCardNumber() {
+        return creditCardNumber;
+    }
+    public void setCreditCardNumber(String creditCardNumber) {
+        this.creditCardNumber = creditCardNumber;
+    }
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
     public int getComplaintId() {
         return complaintId;
     }
@@ -53,13 +66,5 @@ public class Complaint {
 
     public void setDate(Date date) {
         this.date = date;
-    }
-
-    public BuyerDetails getBuyerDetails() {
-        return buyerDetails;
-    }
-
-    public void setBuyerDetails(BuyerDetails buyerDetails) {
-        this.buyerDetails = buyerDetails;
     }
 }

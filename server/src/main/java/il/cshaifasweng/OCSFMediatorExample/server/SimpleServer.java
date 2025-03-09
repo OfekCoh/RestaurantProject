@@ -7,6 +7,7 @@ import il.cshaifasweng.OCSFMediatorExample.server.ocsf.ConnectionToClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.SubscribedClient;
@@ -440,6 +441,51 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
+
+                // -----------------------------------------------------------
+                // complain command
+                // -----------------------------------------------------------
+                case "complaint": {
+                    if (payload.length == 4) {
+                        String complaintText = (String) payload[0];
+                        Date date = (Date) payload[1];
+                        String name = (String) payload[2];
+                        String creditCardNumber = (String) payload[3];
+
+                        Complaint newComplaint = new Complaint(complaintText, date, creditCardNumber, name);
+
+                        try {
+                            boolean result = DatabaseServer.addComplaint(newComplaint);
+
+                            if (result) {
+                                Warning successMsg = new Warning("Complaint successfully added!");
+                                client.sendToClient(successMsg);
+                            } else {
+                                Warning failMsg = new Warning("Failed to add Complaint!");
+                                client.sendToClient(failMsg);
+                            }
+
+                        } catch (IOException e) {
+                            System.err.println("IOException: " + e.getMessage());
+                            e.printStackTrace();
+                        } catch (Exception e) {
+                            System.err.println("Exception: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    } else {
+                        try {
+                            Warning failMsg = new Warning("Failed to add Complaint!");
+                            client.sendToClient(failMsg);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    break;
+
+                }
+
+
+
 
                 // -----------------------------------------------------------
                 // Unrecognized command

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="il.cshaifasweng.OCSFMediatorExample.client.HandleComplaintsController">
+    <TableView fx:id="tableView">
+        <columns>
+            <TableColumn fx:id="IDColumn" text="Complaint ID" />
+            <TableColumn fx:id="nameOfBuyerColumn" text="Name" />
+            <TableColumn fx:id="TextColumn" text="Compliant" />
+            <TableColumn fx:id="DateColumn" text="Date" />
+            <TableColumn fx:id="refundButtonColumn" text="Refund" />
+            <TableColumn fx:id="finishButtonColumn" text="Finish" />
+        </columns>
+    </TableView>
+</VBox>

@@ -1,9 +1,6 @@
 package il.cshaifasweng.OCSFMediatorExample.server;
 
-import il.cshaifasweng.OCSFMediatorExample.entities.BranchEnt;
-import il.cshaifasweng.OCSFMediatorExample.entities.DishEnt;
-import il.cshaifasweng.OCSFMediatorExample.entities.MenuChangeEnt;
-import il.cshaifasweng.OCSFMediatorExample.entities.TableEnt;
+import il.cshaifasweng.OCSFMediatorExample.entities.*;
 import org.hibernate.mapping.Table;
 
 import java.util.ArrayList;
@@ -82,6 +79,7 @@ public class Convertor {
         );
     }
 
+
     public static List<BranchEnt> convertToBranchEntList(List<RestaurantBranch> branches) {
         if (branches == null) return null;
         return branches.stream()
@@ -105,6 +103,22 @@ public class Convertor {
                             menuChange.getNewSalePrice()
                     );
                 })
+                .collect(Collectors.toList());
+    }
+    /**
+     * Convert list of Complaints -> list of ComplaintEnt
+     */
+    public static ComplaintEnt convertToComplaintEnt(Complaint complaint) {
+        if (complaint == null) return null;
+        System.out.println("Converting Complaint: " + complaint.getComplaintId());
+        ComplaintEnt convertedComplaint = new ComplaintEnt(complaint.getComplaintId(), complaint.getComplaint(), complaint.getDate(), complaint.getName(), complaint.getCreditCardNumber());
+        return convertedComplaint;
+
+    }
+    public static List<ComplaintEnt> convertToComplaintEntList(List<Complaint> complaintsList) {
+        if (complaintsList == null) return null;
+        return complaintsList.stream()
+                .map(Convertor::convertToComplaintEnt)
                 .collect(Collectors.toList());
     }
 
