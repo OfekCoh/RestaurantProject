@@ -421,7 +421,7 @@ public class SimpleServer extends AbstractServer {
 //                                Warning successMsg = new Warning("Order added successfully!");
 //                                client.sendToClient(successMsg);
 
-                                Message response = new Message("orderResponse", new Object[]{orderId});
+                                Message response = new Message("orderResponse", new Object[]{"add",orderId});
                                 client.sendToClient(response);
                             } else {
                                 Warning failMsg = new Warning("Failed to add order!");
@@ -431,6 +431,38 @@ public class SimpleServer extends AbstractServer {
                         } catch (Exception e) {
                             try {
                                 Warning failMsg = new Warning("Error, Failed to add order: " + e.getMessage());
+                                client.sendToClient(failMsg);
+                            } catch (IOException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    break;
+                }
+                case "cancel order":{
+                    if (payload.length == 2) {
+                        try{
+                            int orderId = (int) payload[0];
+                            String phoneNumber = (String) payload[1];
+
+
+                            // cancel the order in the database (update status, we don't want to remove it from the database completely).
+                            int newStatus = DatabaseServer.cancelOrder(orderId, phoneNumber);
+                            if (newStatus != -1) {
+//                                Warning successMsg = new Warning("Order canceled successfully!");
+//                                client.sendToClient(successMsg);
+
+                                Message response = new Message("orderResponse", new Object[]{"cancel",newStatus});
+                                client.sendToClient(response);
+                            } else {
+                                Warning failMsg = new Warning("Failed to cancel order!");
+                                client.sendToClient(failMsg);
+                            }
+
+                        } catch (Exception e) {
+                            try {
+                                Warning failMsg = new Warning("Error, Failed to cancel order: " + e.getMessage());
                                 client.sendToClient(failMsg);
                             } catch (IOException ex) {
                                 throw new RuntimeException(ex);

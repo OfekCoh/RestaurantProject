@@ -125,8 +125,9 @@ public class SimpleClient extends AbstractClient {
                     System.out.println("Received orderResponse with " + payload[0] + " ID.");
                     Platform.runLater(() -> {
                         try {
-                            OrderSuccessController.setOrderID((int) payload[0]);
-                            App.setRoot("orderSuccess");
+                            OrderStatusController.setType((String) payload[0]);
+                            OrderStatusController.setOrderID((int) payload[1]);
+                            App.setRoot("orderStatus");
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -225,6 +226,11 @@ public class SimpleClient extends AbstractClient {
 
     public void sendAddOrder(List<Integer> dishIds, List<String> adaptaions, String orderType, int selectedBranch, Date orderDate, Double finalPrice, String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv) throws IOException {
         Message message = new Message("add order", new Object[]{dishIds, adaptaions, orderType, selectedBranch, orderDate, finalPrice, name, address, phone, userId, cardNumber, month, year, cvv});
+        sendToServer(message);
+    }
+
+    public void sendCancelOrder(int orderId, String phoneNum) throws IOException {
+        Message message = new Message("cancel order", new Object[]{orderId,phoneNum});
         sendToServer(message);
     }
 

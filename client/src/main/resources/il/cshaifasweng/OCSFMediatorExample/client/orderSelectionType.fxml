@@ -10,7 +10,7 @@
    <children>
       <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
          <children>
-            <Label text="Select Order Type:" textAlignment="CENTER">
+            <Label fx:id="mainLabel" text="Select Order Type:" textAlignment="CENTER">
                <font>
                   <Font name="System Bold" size="29.0" />
                </font>
@@ -20,8 +20,8 @@
       <HBox prefHeight="100.0" prefWidth="200.0" />
       <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
          <children>
-            <Button fx:id="pickupButton" mnemonicParsing="false" onAction="#selectPickup" prefHeight="51.0" prefWidth="124.0" text="איסוף עצמי" />
-            <Button fx:id="deliveryButton" mnemonicParsing="false" onAction="#selectDelivery" prefHeight="52.0" prefWidth="125.0" text="משלוח" />
+            <Button fx:id="leftButton" mnemonicParsing="false" onAction="#selectLeftButton" prefHeight="51.0" prefWidth="124.0" text="איסוף עצמי" />
+            <Button fx:id="rightButton" mnemonicParsing="false" onAction="#selectRightButton" prefHeight="52.0" prefWidth="125.0" text="משלוח" />
          </children>
       </HBox>
       <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
