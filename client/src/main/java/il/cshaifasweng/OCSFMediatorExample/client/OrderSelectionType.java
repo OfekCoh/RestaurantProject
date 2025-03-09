@@ -7,6 +7,11 @@ import javafx.scene.control.Button;
 import java.io.IOException;
 
 public class OrderSelectionType {
+    private static String selectedMode="";
+
+    public static void setSelectedMode(String mode) {
+        selectedMode = mode;
+    }
 
     @FXML
     private Button backButton;
@@ -24,16 +29,15 @@ public class OrderSelectionType {
 
     @FXML
     void selectDelivery(ActionEvent event) throws IOException {
+        OrderManage.setOrderType("Delivery");
         App.setRoot("selectDeliveryLocation");
-        SelectDeliveryLocationController.setSelectedOrderType("Delivery");
+
     }
 
     @FXML
     void selectPickup(ActionEvent event) throws IOException {
+        OrderManage.setOrderType("Pickup");
         App.setRoot("selectDeliveryLocation");
-        SelectDeliveryLocationController.setSelectedOrderType("Pickup");
-
-
     }
 
 }

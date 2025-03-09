@@ -1,6 +1,5 @@
-package il.cshaifasweng.OCSFMediatorExample.client;
+package il.cshaifasweng.OCSFMediatorExample.client.Events;
 
-import il.cshaifasweng.OCSFMediatorExample.entities.DishEnt;
 import il.cshaifasweng.OCSFMediatorExample.entities.MenuChangeEnt;
 
 import java.util.List;

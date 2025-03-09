@@ -1,58 +1,51 @@
 package il.cshaifasweng.OCSFMediatorExample.client;
 
+import il.cshaifasweng.OCSFMediatorExample.client.Events.DishEvent;
 import il.cshaifasweng.OCSFMediatorExample.entities.DishEnt;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.scene.control.Label;
+import javafx.scene.text.Text;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class DishSelectionController {
 
-    @FXML
-    private GridPane dishGrid;
+    @FXML private GridPane dishGrid;
+    @FXML private Button backButton;
+    @FXML private Label menuLabel;
+    @FXML private TextField searchField;
 
-    @FXML
-    private Button backButton;
-
-    @FXML
-    private Label menuLabel;
-
-    @FXML
-    private TextField searchField;
+    // The cart button in top-right
+    @FXML private Button cartButton;
 
     private static String selectedMode;
-    private static int selectedBranchId; // Stores the selected branch ID
+    private static int selectedBranchId;
     private static String selectedBranchName;
-
     private List<DishEnt> dishes;
 
     public static void setSelectedBranchName(String branchName) {
         selectedBranchName = branchName;
     }
-
     public static void setSelectedBranch(int branchId) {
         selectedBranchId = branchId;
     }
-
-    public static void setSelectedMode(String selectedMode) {
-        DishSelectionController.selectedMode = selectedMode;
+    public static void setSelectedMode(String mode) {
+        selectedMode = mode;
     }
-
     public void setDishes(List<DishEnt> dishes) {
         this.dishes = dishes;
     }
@@ -60,23 +53,47 @@ public class DishSelectionController {
     @Subscribe
     public void onDishEvent(DishEvent event) {
         Platform.runLater(() -> {
-            System.out.println(event.getDishList().toString());
             setDishes(event.getDishList());
             populateDishGrid();
         });
     }
 
     @FXML
+    void initialize() {
+        // If you rely on dish events, keep:
+        EventBus.getDefault().register(this);
+
+        setDishes(SimpleClient.DishList);
+
+        // Right after load, show correct cart count
+        updateCartCount();
+
+        if (dishes == null || dishes.isEmpty()) {
+            System.out.println("No dishes available!");
+            return;
+        }
+
+        if ("order".equalsIgnoreCase(selectedMode)) {
+            backButton.setText("Back");
+        }
+        menuLabel.setText("Menu - " + selectedBranchName);
+        populateDishGrid();
+
+
+//        searchField.setFocusTraversable(false);
+//        dishGrid.requestFocus();
+        // Live filtering while typing
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> onSearch());
+    }
+
+    @FXML
     private void onSearch() {
         if (dishes == null) return;
-        String searchText = searchField.getText().toLowerCase();
-
-        // Filter dishes dynamically based on search input
-        List<DishEnt> filteredDishes = dishes.stream()
-                .filter(dish -> dish.getName().toLowerCase().contains(searchText))
+        String txt = searchField.getText().toLowerCase();
+        List<DishEnt> filtered = dishes.stream()
+                .filter(d -> d.getName().toLowerCase().contains(txt))
                 .collect(Collectors.toList());
-
-        populateDishGrid(filteredDishes);
+        populateDishGrid(filtered);
     }
 
     private void populateDishGrid() {
@@ -85,18 +102,13 @@ public class DishSelectionController {
 
     private void populateDishGrid(List<DishEnt> dishList) {
         dishGrid.getChildren().clear();
-        menuLabel.setText("Menu - " + selectedBranchName);
-
-        int column = 0;
-        int row = 0;
-
+        int column = 0, row = 0;
         for (DishEnt dish : dishList) {
             if (dish.getBranchID() == 0 || dish.getBranchID() == selectedBranchId) {
-                VBox dishBox = createDishBox(dish);
-                dishGrid.add(dishBox, column, row);
-
+                VBox box = createDishBox(dish);
+                dishGrid.add(box, column, row);
                 column++;
-                if (column == 2) { // 2 items per row
+                if (column == 2) {
                     column = 0;
                     row++;
                 }
@@ -106,21 +118,21 @@ public class DishSelectionController {
 
     private VBox createDishBox(DishEnt dish) {
         Image dishImg = utils.decodeBase64ToImage(dish.getImage());
-
         ImageView dishImage = new ImageView(dishImg);
-        dishImage.setFitWidth(150);
-        dishImage.setFitHeight(150);
+        dishImage.setPreserveRatio(true);
+        dishImage.setFitWidth(200);
+        // or remove setFitWidth if you want the image to scale even more
 
-        Label dishName = new Label(dish.getName());
-        dishName.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+        Label name = new Label(dish.getName());
+        name.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
         Node priceNode;
         if (dish.getIsSalePrice()) {
-            Label salePriceLabel = new Label("$" + dish.getSalePrice());
-            salePriceLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-            Label originalPriceLabel = new Label("$" + dish.getPrice());
-            originalPriceLabel.setStyle("-fx-strikethrough: true; -fx-text-fill: gray;");
-            priceNode = new HBox(5, salePriceLabel, originalPriceLabel);
+            Label salePrice = new Label("$" + dish.getSalePrice());
+            salePrice.setStyle("-fx-font-weight: bold;");
+            Text origPrice = new Text("$" + dish.getPrice());
+            origPrice.setStrikethrough(true);
+            priceNode = new HBox(5, salePrice, origPrice);
         } else {
             priceNode = new Label("$" + dish.getPrice());
         }
@@ -128,20 +140,26 @@ public class DishSelectionController {
         Label dishType = new Label((dish.getBranchID() == 0) ? "Chain Dish" : "Branch Dish");
         dishType.setStyle("-fx-font-style: italic; -fx-text-fill: gray;");
 
-        VBox dishBox = new VBox(10, dishImage, dishName, priceNode, dishType);
-        dishBox.setStyle("-fx-padding: 10px; -fx-border-color: black; -fx-border-radius: 5px; -fx-background-color: #f8f8f8;");
-        dishBox.setOnMouseClicked(event -> onDishSelected(dish));
+        VBox box = new VBox(10, dishImage, name, priceNode, dishType);
+        box.setStyle("-fx-padding: 10; -fx-border-color: black; -fx-background-color: #f8f8f8;");
 
-        return dishBox;
+        // Let the box fill horizontally in the grid cell
+        box.setMaxWidth(Double.MAX_VALUE);
+        // Tells the gridpane to let this box expand
+        GridPane.setHgrow(box, Priority.ALWAYS);
+
+        box.setOnMouseClicked(e -> onDishSelected(dish));
+        return box;
     }
 
+
     private void onDishSelected(DishEnt dish) {
-        System.out.println("Selected Dish ID: " + dish.getId());
         DishDetailsController.setSelectedDish(dish);
         DishDetailsController.setSelectedDishId(dish.getId());
+        DishDetailsController.setSelectedMode(selectedMode);
         try {
             App.setRoot("dishDetails");
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -149,36 +167,29 @@ public class DishSelectionController {
     @FXML
     private void onBackClick() {
         try {
-            if(selectedMode.equals("order")){
+            if ("order".equalsIgnoreCase(selectedMode)) {
                 App.setRoot("selectDeliveryLocation");
-            }else{
+            } else {
                 App.setRoot("branchSelection");
             }
-
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    /**
+     * Called when user clicks cart icon => navigate to cart screen.
+     */
     @FXML
-    void initialize() {
-        EventBus.getDefault().register(this);
-        setDishes(SimpleClient.DishList);
-        System.out.println(selectedMode);
-        if (dishes == null || dishes.isEmpty()) {
-            System.out.println("No dishes available!");
-            return;
-        }
+    private void onCartButtonClick() throws IOException {
+        App.setRoot("cart");
+    }
 
-        if(selectedMode.equals("order")){
-            backButton.setText("Back");
-        }
-
-        menuLabel.setText("Menu - " + selectedBranchName);
-        populateDishGrid();
-
-        searchField.setFocusTraversable(false);
-        dishGrid.requestFocus();
-        searchField.textProperty().addListener((observable, oldValue, newValue) -> onSearch());
+    /**
+     * Refresh the cart icon text with current total items.
+     */
+    private void updateCartCount() {
+        int count = OrderManage.getDishIds().size();
+        cartButton.setText("🛒 (" + count + ")");
     }
 }
