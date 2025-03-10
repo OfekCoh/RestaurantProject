@@ -74,10 +74,10 @@ public class DatabaseServer {
          */
 
         // Chain-wide dishes (Branch ID 0)
-        Dish dish1 = new Dish(15.99, "French Fries", "Crispy golden fries with a side of ketchup.", 0, Arrays.asList("Potatoes", "Salt", "Oil"), encodeImageToBase64("frenchFries"), 5.99, true);
-        Dish dish2 = new Dish(12, "Garlic Bread", "Toasted bread with garlic and butter.", 0, Arrays.asList("Bread", "Butter", "Garlic"), encodeImageToBase64("garlicBread"));
-        Dish dish3 = new Dish(20, "Spaghetti Bolognese", "Traditional Italian pasta with meat sauce.", 0, Arrays.asList("Pasta", "Ground Beef", "Tomato Sauce", "Parmesan"), encodeImageToBase64("spaghettiBolognese"));
-        Dish dish4 = new Dish(18, "Greek Salad", "Fresh vegetables with feta cheese and olives.", 0, Arrays.asList("Lettuce", "Tomatoes", "Feta Cheese", "Olives"), encodeImageToBase64("greekSalad"));
+        Dish dish1 = new Dish(15.99, "French Fries", "Crispy golden fries with a side of ketchup.", 0, Arrays.asList("Potatoes", "Salt", "Oil"),new ArrayList<>(), encodeImageToBase64("frenchFries"), 5.99, true);
+        Dish dish2 = new Dish(12, "Garlic Bread", "Toasted bread with garlic and butter.", 0, Arrays.asList("Bread", "Butter", "Garlic"), Arrays.asList("Cheese"), encodeImageToBase64("garlicBread"));
+        Dish dish3 = new Dish(20, "Spaghetti Bolognese", "Traditional Italian pasta with meat sauce.", 0, Arrays.asList("Pasta", "Ground Beef", "Tomato Sauce", "Parmesan"), Arrays.asList("Olive Oil"), encodeImageToBase64("spaghettiBolognese"));
+        Dish dish4 = new Dish(18, "Greek Salad", "Fresh vegetables with feta cheese and olives.", 0, Arrays.asList("Lettuce", "Tomatoes", "Feta Cheese", "Olives"), Arrays.asList("Mozerella Cheese"), encodeImageToBase64("greekSalad"));
 
         session.save(dish1);
         session.save(dish2);
@@ -86,9 +86,9 @@ public class DatabaseServer {
         session.flush();
 
         // Branch-specific dishes (Branch ID 1)
-        Dish dish5 = new Dish(25, "Margherita Pizza", "Classic Italian pizza with fresh tomatoes and basil.", 1, Arrays.asList("Tomato", "Mozzarella", "Basil"), encodeImageToBase64("pizza"));
-        Dish dish6 = new Dish(30, "Caesar Salad", "Crispy romaine lettuce with Caesar dressing and parmesan.", 1, Arrays.asList("Lettuce", "Croutons", "Parmesan", "Caesar Dressing"), encodeImageToBase64("caesarSalad"));
-        Dish dish7 = new Dish(28, "Grilled Salmon", "Freshly grilled salmon with lemon butter sauce.", 1, Arrays.asList("Salmon", "Lemon", "Butter", "Garlic"), encodeImageToBase64("grilledSalmon"));
+        Dish dish5 = new Dish(25, "Margherita Pizza", "Classic Italian pizza with fresh tomatoes and basil.", 1, Arrays.asList("Tomato", "Mozzarella", "Basil"),Arrays.asList("Olives", "Mushrooms"), encodeImageToBase64("pizza"));
+        Dish dish6 = new Dish(30, "Caesar Salad", "Crispy romaine lettuce with Caesar dressing and parmesan.", 1, Arrays.asList("Lettuce", "Croutons", "Parmesan", "Caesar Dressing"), new ArrayList<>(), encodeImageToBase64("caesarSalad"));
+        Dish dish7 = new Dish(28, "Grilled Salmon", "Freshly grilled salmon with lemon butter sauce.", 1, Arrays.asList("Salmon", "Lemon", "Butter", "Garlic"), new ArrayList<>(), encodeImageToBase64("grilledSalmon"));
 
         session.save(dish5);
         session.save(dish6);
@@ -96,9 +96,9 @@ public class DatabaseServer {
         session.flush();
 
         // Branch-specific dishes (Branch ID 2)
-        Dish dish8 = new Dish(22, "BBQ Chicken Wings", "Spicy and tangy chicken wings with BBQ sauce.", 2, Arrays.asList("Chicken", "BBQ Sauce", "Spices"), encodeImageToBase64("bbqChickenWings"));
-        Dish dish9 = new Dish(10, "Mozzarella Sticks", "Fried mozzarella sticks with marinara sauce.", 2, Arrays.asList("Mozzarella", "Breadcrumbs", "Marinara Sauce"), encodeImageToBase64("mozzarellaSticks"));
-        Dish dish10 = new Dish(35, "Ribeye Steak", "Juicy ribeye steak served with mashed potatoes.", 2, Arrays.asList("Beef", "Potatoes", "Butter"), encodeImageToBase64("ribeyeSteak"));
+        Dish dish8 = new Dish(22, "BBQ Chicken Wings", "Spicy and tangy chicken wings with BBQ sauce.", 2, Arrays.asList("Chicken", "BBQ Sauce", "Spices"), new ArrayList<>(), encodeImageToBase64("bbqChickenWings"));
+        Dish dish9 = new Dish(10, "Mozzarella Sticks", "Fried mozzarella sticks with marinara sauce.", 2, Arrays.asList("Mozzarella", "Breadcrumbs", "Marinara Sauce"), new ArrayList<>(), encodeImageToBase64("mozzarellaSticks"));
+        Dish dish10 = new Dish(35, "Ribeye Steak", "Juicy ribeye steak served with mashed potatoes.", 2, Arrays.asList("Beef", "Potatoes", "Butter"), new ArrayList<>(), encodeImageToBase64("ribeyeSteak"));
 
         session.save(dish8);
         session.save(dish9);
@@ -135,27 +135,19 @@ public class DatabaseServer {
 
     /**
      * This function encodes images to base64 for the database creation, for starter images
+     *
      * @param name - the file name in the starterImages directory
      * @return returns base64 of an image, so it can be loaded into the database.
      */
     public static String encodeImageToBase64(String name) throws Exception {
 
-        try (InputStream is = DatabaseServer.class.getResourceAsStream("./starterImages/"+name+".jpg")) {
+        try (InputStream is = DatabaseServer.class.getResourceAsStream("./starterImages/" + name + ".jpg")) {
             byte[] fileContent = is.readAllBytes();
             String base64 = Base64.getEncoder().encodeToString(fileContent);
             return base64;
         } catch (Exception e) {
             return null;
         }
-
-
-//        Path path = (Path) Paths.get("starterImages", name+".jpg");        // read all bytes from the file
-//        byte[] fileBytes = Files.readAllBytes(path);
-//        // encode as base64 (convert to base64)
-//        String encodedString = Base64.getEncoder().encodeToString(fileBytes);
-//        // optionally prepend the MIME type
-////        return "data:image/jpeg;base64," + encodedString;
-//        return encodedString;
     }
 
     public static List<RestaurantBranch> getAllBranches(Session session) throws Exception {
@@ -274,7 +266,7 @@ public class DatabaseServer {
         }
     }
 
-    public static Object[]  cancelOrder(int orderId, String phoneNumber) {
+    public static Object[] cancelOrder(int orderId, String phoneNumber) {
         int newStatus = -1;
         try (Session session = getSessionFactory().openSession()) {
             Transaction transaction = session.beginTransaction();
@@ -319,17 +311,17 @@ public class DatabaseServer {
                 newStatus = 1;  // Full Refund
             } else if (diffHours >= 1) {
                 newStatus = 2;  // Partial Refund
-                priceRefund=priceRefund*0.5;
+                priceRefund = priceRefund * 0.5;
             } else {
                 newStatus = 3;  // No Refund
-                priceRefund=0;
+                priceRefund = 0;
             }
 
             // 6) Update the order’s status
             order.setStatus(newStatus);
             session.update(order);
             transaction.commit();
-            return new Object[]{newStatus,priceRefund};
+            return new Object[]{newStatus, priceRefund};
         } catch (Exception e) {
             System.err.println("Failed to cancel order: " + e.getMessage());
             e.printStackTrace();
@@ -376,6 +368,7 @@ public class DatabaseServer {
             existingDish.setDescription(updatedDish.getDescription());
             existingDish.setBranchID(updatedDish.getBranchID());
             existingDish.setIngredients(updatedDish.getIngredients());
+            existingDish.setToppings(updatedDish.getToppings());
             existingDish.setImage(updatedDish.getImage());
             existingDish.setPrice(updatedDish.getPrice());
             existingDish.setSalePrice(updatedDish.getSalePrice());

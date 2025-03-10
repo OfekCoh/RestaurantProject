@@ -277,17 +277,18 @@ public class SimpleServer extends AbstractServer {
                 }
 
                 case "add dish": {
-                    if (payload.length == 8) {
+                    if (payload.length == 9) {
                         String name = (String) payload[0];
                         String description = (String) payload[1];
                         int branchID = (int) payload[2];
                         List<String> ingredients = (List<String>) payload[3];
-                        String image = (String) payload[4];
-                        double price = (double) payload[5];
-                        boolean isSalePrice = (boolean) payload[6];
-                        double salePrice = (double) payload[7];
+                        List<String> toppings = (List<String>) payload[4];
+                        String image = (String) payload[5];
+                        double price = (double) payload[6];
+                        boolean isSalePrice = (boolean) payload[7];
+                        double salePrice = (double) payload[8];
 
-                        Dish newDish = new Dish(price, name, description, branchID, ingredients, image, salePrice, isSalePrice);
+                        Dish newDish = new Dish(price, name, description, branchID, ingredients,toppings, image, salePrice, isSalePrice);
 
                         try {
                             Boolean result = DatabaseServer.addDish(newDish);
@@ -328,18 +329,19 @@ public class SimpleServer extends AbstractServer {
                     // [int dishId, String name, String description,
                     //  int branchID, List<String> ingredients, String image, int price]
 
-                    if (payload.length == 9) {
+                    if (payload.length == 10) {
                         int dishId = (int) payload[0];
                         String name = (String) payload[1];
                         String desc = (String) payload[2];
                         int branchID = (int) payload[3];
                         List<String> ingr = (List<String>) payload[4];
-                        String image = (String) payload[5];
-                        double price = (double) payload[6];
-                        boolean isSalePrice = (boolean) payload[7];
-                        double salePrice = (double) payload[8];
+                        List<String> toppings = (List<String>) payload[5];
+                        String image = (String) payload[6];
+                        double price = (double) payload[7];
+                        boolean isSalePrice = (boolean) payload[8];
+                        double salePrice = (double) payload[9];
 
-                        Dish dishToUpdate = new Dish(price, name, desc, branchID, ingr, image, salePrice, isSalePrice);
+                        Dish dishToUpdate = new Dish(price, name, desc, branchID, ingr,toppings, image, salePrice, isSalePrice);
                         dishToUpdate.setId(dishId);
 
                         // Wrap the updateDish call in a broad try/catch

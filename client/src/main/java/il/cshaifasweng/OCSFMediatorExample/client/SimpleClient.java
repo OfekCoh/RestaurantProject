@@ -202,7 +202,7 @@ public class SimpleClient extends AbstractClient {
     public void sendAddDishCommand(DishEnt updatedDish) {
         System.out.println("Client: Add Dish: " + updatedDish);
         try {
-            Message message = new Message("add dish", new Object[]{updatedDish.getName(), updatedDish.getDescription(), updatedDish.getBranchID(), Arrays.asList(updatedDish.getIngredients()), updatedDish.getImage(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice()});
+            Message message = new Message("add dish", new Object[]{updatedDish.getName(), updatedDish.getDescription(), updatedDish.getBranchID(), Arrays.asList(updatedDish.getIngredients()),Arrays.asList(updatedDish.getToppings()), updatedDish.getImage(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice()});
             sendToServer(message);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -213,7 +213,7 @@ public class SimpleClient extends AbstractClient {
         System.out.println("Client: Update Dish: " + updatedDish);
         try {
             // We'll pack all relevant fields into the payload array
-            Message message = new Message("update dish", new Object[]{updatedDish.getId(), updatedDish.getName(), updatedDish.getDescription(), updatedDish.getBranchID(), Arrays.asList(updatedDish.getIngredients()), updatedDish.getImage(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice()});
+            Message message = new Message("update dish", new Object[]{updatedDish.getId(), updatedDish.getName(), updatedDish.getDescription(), updatedDish.getBranchID(), Arrays.asList(updatedDish.getIngredients()),Arrays.asList(updatedDish.getToppings()), updatedDish.getImage(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice()});
             sendToServer(message);
         } catch (IOException e) {
             throw new RuntimeException(e);

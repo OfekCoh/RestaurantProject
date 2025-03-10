@@ -10,6 +10,7 @@ public class DishEnt implements Serializable {
     private String name;
     private String description;
     private String[] ingredients; // Change from List<String> to String[]
+    private String[] toppings;
     private String image;
     private double price;
     private int branchID;
@@ -21,10 +22,11 @@ public class DishEnt implements Serializable {
     }
 
     //To send to the server side, since the database assign the id.
-    public DishEnt(String name, String description, String[] ingredients, double price, int branchID, String image, boolean isSalePrice, double salePrice) {
+    public DishEnt(String name, String description, String[] ingredients, String[]toppings, double price, int branchID, String image, boolean isSalePrice, double salePrice) {
         this.name = name;
         this.description = description;
         this.ingredients = ingredients;  // a String[]!
+        this.toppings=toppings;
         this.price = price;
         this.branchID = branchID;
         this.image = image;
@@ -32,11 +34,12 @@ public class DishEnt implements Serializable {
         this.salePrice = salePrice;
     }
 
-    public DishEnt(int id, String name, String description, String[] ingredients, double price, int branchID, String image, boolean isSalePrice, double salePrice) {
+    public DishEnt(int id, String name, String description, String[] ingredients,String[] toppings, double price, int branchID, String image, boolean isSalePrice, double salePrice) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.ingredients = ingredients;  // a String[]!
+        this.toppings=toppings;
         this.price = price;
         this.branchID = branchID;
         this.image = image;
@@ -74,6 +77,14 @@ public class DishEnt implements Serializable {
 
     public void setIngredients(String[] ingredients) {
         this.ingredients = ingredients;
+    }
+
+    public String[] getToppings() {
+        return toppings;
+    }
+
+    public void setToppings(String[] toppings) {
+        this.toppings = toppings;
     }
 
     public double getPrice() {
@@ -125,6 +136,7 @@ public class DishEnt implements Serializable {
                 ", ingredients=" + Arrays.toString(ingredients) +
                 ", price=" + price +
                 ", branchID=" + branchID +
+                ", toppings=" + Arrays.toString(toppings) +
 //                ", image='" + image + '\'' +
                 ", salePrice=" + salePrice +
                 ", isSalePrice=" + isSalePrice +
