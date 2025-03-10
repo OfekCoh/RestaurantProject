@@ -10,6 +10,9 @@ import javafx.scene.layout.HBox;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -117,8 +120,16 @@ public class CartController {
             if (!OrderManage.getDishIds().isEmpty()) {
                 OrderManage.setFinalPrice(totalPrice);
                 System.out.println("FinalPrice: " + OrderManage.getFinalPrice());
-                BuyerDetailsFormController.setPreviousFXML("order");
-                App.setRoot("buyerForm");
+
+                // Pass to the form who called him, these 5 lines replace App.setRoot("buyerForm")
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/il/cshaifasweng/OCSFMediatorExample/client/buyerForm.fxml"));
+                Parent root = loader.load(); // calls initialize
+
+                BuyerDetailsFormController controller = loader.getController(); // Get the controller and set caller type
+                controller.setCallerType("cart");  // Pass "cart"
+
+                App.getRootLayout().setCenter(root);
+
             } else {
                 Alert alert = new Alert(Alert.AlertType.INFORMATION,
                         String.format("Message: %s\n",

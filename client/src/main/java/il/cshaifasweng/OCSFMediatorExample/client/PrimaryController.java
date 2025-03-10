@@ -105,8 +105,8 @@ public class PrimaryController {
     }
 
     @FXML
-    void switchToTableOrder(ActionEvent event) {
-
+    void switchToTableOrder(ActionEvent event) throws Exception {
+        App.setRoot("orderTable");
     }
 
     @FXML

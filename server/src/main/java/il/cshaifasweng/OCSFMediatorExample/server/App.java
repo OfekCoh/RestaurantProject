@@ -16,7 +16,6 @@ public class App
     public static void main( String[] args ) throws IOException
     {
         String databasePassword= getDatabasePassword();
-        System.out.println(databasePassword);
         server = new SimpleServer(3000,databasePassword);
         System.out.println("Server is listening");
         server.listen();

@@ -5,15 +5,13 @@ import javafx.scene.control.*;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.Date;
+import java.util.Objects;
 import java.util.stream.IntStream;
 
 public class BuyerDetailsFormController {
 
-    private static String previousFXML; // to determine which order to perform
-    public static void setPreviousFXML(String previousFXML) {
-        BuyerDetailsFormController.previousFXML = previousFXML;
-    }
+    private String callerType = "default caller"; // who called me.
+
     @FXML
     private TextField nameField;
     @FXML
@@ -57,14 +55,12 @@ public class BuyerDetailsFormController {
         // Optionally set default selection to currentMonth / currentYear
         monthCombo.setValue(currentMonth);
         yearCombo.setValue(currentYear);
-        if(previousFXML != null && previousFXML.equals("order")) {
-            totalCostLabel.setText(String.format("Total Cost: $%.2f", OrderManage.getFinalPrice()));
-        }
 
+//        totalCostLabel.setText(String.format("Total Cost: $%.2f", OrderManage.getFinalPrice()));  // moved to the new UI function
     }
 
     @FXML
-    private void onSubmit() {
+    private void onSubmit() throws IOException {
         // Gather personal info
         String name = nameField.getText().trim();
         String phone = phoneField.getText().trim();
@@ -138,52 +134,90 @@ public class BuyerDetailsFormController {
                 "ID: %s, Card#: %s, Expiry: %02d/%d, CVV: %s%n",
                 userID, cardNumber, month, year, cvv
         );
-
         //If we got here, it means everything checks out, so we will submit the order.
 
-        //I know it's possible to make it shorter similiar to the idea of my paylod in messages, but I prefer to currently leave it as it and not to "compress" it for future changes that may be needed.
-        //List<Integer> dishIds, List<String> Adaptaions, String OrderType, int selectedBranch, Date orderDate, Double finalPrice, String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv
-        try {
-            //decide what happen on submit based on previous fxml
-            switch (previousFXML){
-                case "order":
+        // continue based on callerType
+        switch (callerType) {
+            case "cart":
+                //I know it's possible to make it shorter similiar to the idea of my paylod in messages, but I prefer to currently leave it as it and not to "compress" it for future changes that may be needed.
+                //List<Integer> dishIds, List<String> Adaptaions, String OrderType, int selectedBranch, Date orderDate, Double finalPrice, String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv
+                try {
                     SimpleClient.getClient().sendAddOrder(OrderManage.getDishIds(),OrderManage.getAdaptations(),OrderManage.getOrderType(),OrderManage.getSelectedBranch(),OrderManage.getOrderDate(),OrderManage.getFinalPrice(),name,address,phone,userID,cardNumber,month,year,cvv);
-                    break;
-
-                case "complaint":
-                    SimpleClient.getClient().sendComplaint(ComplaintController.getComplainText(), new Date(), name, address, phone, userID, cardNumber, month, year, cvv);
+                } catch (IOException e) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR,
+                            String.format("Message: %s\n",
+                                    "Order Submission Failed, please try again!"
+                            ));
+                    alert.show();
+                    throw new RuntimeException(e);
+                }
+                // You can store this data or proceed.
+                // e.g. App.setRoot("nextScene");
                 break;
 
-                default:
-                    break;
+            case "orderTable":
+                System.out.println("got here from orderTable");
+                App.setRoot("primary");
+                // will be added by ofek
+                break;
 
-            }
-            App.setRoot("primary");
-        } catch (IOException e) {
-        Alert alert = new Alert(Alert.AlertType.ERROR,
-                String.format("Message: %s\n",
-                        "Order Submission Failed, please try again!"
-                ));
-        alert.show();
-        throw new RuntimeException(e);
+            case "complaint":
+                System.out.println("got here from complaint");
+                App.setRoot("primary");
+                // will be added by roy
+                break;
+
+            default:
+                System.out.println("error receiving callerType");
+                App.setRoot("primary");
+                break;
         }
+
     }
 
     @FXML
     private void onBack() throws IOException {
-        // decide which page to return on back
-        switch (previousFXML){
-            case "order":
+        // go back to different pages depending on the caller
+        switch (callerType) {
+            case "cart":
                 App.setRoot("cart");
                 break;
-
+            case "orderTable":
+                App.setRoot("orderTable");
+                break;
             case "complaint":
                 App.setRoot("complaint");
                 break;
+            default:
+                System.out.println("Unknown caller type, proceeding with default behavior.");
+                App.setRoot("primary");
+                break;
+        }
+    }
 
+    // will be called from the caller window
+    public void setCallerType(String callerType) {
+        this.callerType = callerType;
+        updateUIBasedOnCallerType(); // change the lables as you wish
+    }
+
+    public void updateUIBasedOnCallerType() {
+        if (nameField != null) {  // just to check if its the correct one. (Ensure the field is initialized before setting text)
+            nameField.setPromptText("caller is: " + callerType);
+        }
+        switch (callerType) {
+            case "cart":
+                totalCostLabel.setText(String.format("Total Cost: $%.2f", OrderManage.getFinalPrice()));
+                break;
+            case "orderTable":
+                totalCostLabel.setText("Please note: If you cancel within the last hour, a $10 fee will be applied.");
+                totalCostLabel.setStyle("-fx-font-size: 16; -fx-font-weight: normal;");
+                break;
+            case "complaint":
+                totalCostLabel.setVisible(false);
+                break;
             default:
                 break;
         }
-
     }
 }
