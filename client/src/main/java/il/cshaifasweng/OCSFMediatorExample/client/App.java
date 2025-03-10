@@ -136,9 +136,4 @@ public class App extends Application {
         launch();
     }
 
-    // so we can send parameters through fxml
-    public static BorderPane getRootLayout() {
-        return rootLayout;
-    }
-
 }

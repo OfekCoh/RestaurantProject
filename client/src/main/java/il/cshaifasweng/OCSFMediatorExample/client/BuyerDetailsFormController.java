@@ -10,7 +10,7 @@ import java.util.stream.IntStream;
 
 public class BuyerDetailsFormController {
 
-    private String callerType = "default caller"; // who called me.
+    private static String callerType; // who called me.
 
     @FXML
     private TextField nameField;
@@ -56,7 +56,7 @@ public class BuyerDetailsFormController {
         monthCombo.setValue(currentMonth);
         yearCombo.setValue(currentYear);
 
-//        totalCostLabel.setText(String.format("Total Cost: $%.2f", OrderManage.getFinalPrice()));  // moved to the new UI function
+        updateUIBasedOnCallerType(); // change the bottom label depending on the caller type
     }
 
     @FXML
@@ -136,8 +136,9 @@ public class BuyerDetailsFormController {
         );
         //If we got here, it means everything checks out, so we will submit the order.
 
-        // continue based on callerType
+        // -------  continue based on callerType  -------
         switch (callerType) {
+
             case "cart":
                 //I know it's possible to make it shorter similiar to the idea of my paylod in messages, but I prefer to currently leave it as it and not to "compress" it for future changes that may be needed.
                 //List<Integer> dishIds, List<String> Adaptaions, String OrderType, int selectedBranch, Date orderDate, Double finalPrice, String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv
@@ -155,14 +156,18 @@ public class BuyerDetailsFormController {
                 // e.g. App.setRoot("nextScene");
                 break;
 
+
             case "orderTable":
-                System.out.println("got here from orderTable");
+                System.out.println("submitting a table order");
+                // probably will show a message order completed and go back to primary
+                // also update database for these tables to be taken at the next 1.5 hours
                 App.setRoot("primary");
-                // will be added by ofek
+
                 break;
 
+
             case "complaint":
-                System.out.println("got here from complaint");
+                System.out.println("submitting a complaint");
                 App.setRoot("primary");
                 // will be added by roy
                 break;
@@ -196,15 +201,11 @@ public class BuyerDetailsFormController {
     }
 
     // will be called from the caller window
-    public void setCallerType(String callerType) {
-        this.callerType = callerType;
-        updateUIBasedOnCallerType(); // change the lables as you wish
+    public static void setCallerType(String callerType) {
+        BuyerDetailsFormController.callerType = callerType;
     }
 
     public void updateUIBasedOnCallerType() {
-        if (nameField != null) {  // just to check if its the correct one. (Ensure the field is initialized before setting text)
-            nameField.setPromptText("caller is: " + callerType);
-        }
         switch (callerType) {
             case "cart":
                 totalCostLabel.setText(String.format("Total Cost: $%.2f", OrderManage.getFinalPrice()));
