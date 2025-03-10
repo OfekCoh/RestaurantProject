@@ -127,6 +127,12 @@ public class SimpleClient extends AbstractClient {
                         try {
                             OrderStatusController.setType((String) payload[0]);
                             OrderStatusController.setOrderID((int) payload[1]);
+                            if(((String) payload[0]).equalsIgnoreCase("cancel"))
+                            {
+                                OrderStatusController.setRefundAmount((double) payload[2]);
+                            }else{
+                                OrderStatusController.setRefundAmount(0);
+                            }
                             App.setRoot("orderStatus");
                         } catch (IOException e) {
                             throw new RuntimeException(e);

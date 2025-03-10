@@ -248,56 +248,66 @@ public class DatabaseServer {
         }
     }
 
-    public static int cancelOrder(int orderId, String phoneNumber) {
+    public static Object[]  cancelOrder(int orderId, String phoneNumber) {
         int newStatus = -1;
         try (Session session = getSessionFactory().openSession()) {
             Transaction transaction = session.beginTransaction();
 
             Order order = session.get(Order.class, orderId);
             if (order == null) {
-//                System.err.println("Order not found with ID: " + orderId);
-                return newStatus;
+                return new Object[]{newStatus};
             }
 
             if (order.getStatus() != 0) {
-                System.err.println("Cannot cancel Order " + orderId + " because status is not pending (status="
-                        + order.getStatus() + ")");
-                return newStatus;
+                //only if the status is pending we can cancel it, if it is other status, its either completed or already canceled
+                return new Object[]{newStatus};
             }
 
             BuyerDetails details = order.getBuyerDetails();
             //Check we got the same phone number
             if (details == null || !details.getPhone().equals(phoneNumber)) {
-                System.err.println("Phone mismatch for Order " + orderId + ". Provided=" + phoneNumber
-                        + ", Actual=" + (details != null ? details.getPhone() : "null"));
-                return newStatus;
+//                System.err.println("Phone mismatch for Order " + orderId + ". Provided=" + phoneNumber
+//                        + ", Actual=" + (details != null ? details.getPhone() : "null"));
+                return new Object[]{newStatus};
             }
-            // 4) Calculate hours difference from "now" to the order’s scheduled time
-            //    (assuming orderDate is in the future or near-future)
+            // Calculate hours difference from now to the order’s scheduled time
             long nowMillis = System.currentTimeMillis();
             long orderMillis = order.getOrderDate().getTime();
             long diffMillis = orderMillis - nowMillis;
-            // Convert difference in milliseconds to hours (truncating down to whole hours)
-            long diffHours = diffMillis / (1000 * 60 * 60);
 
-            // 5) Decide new status based on how many hours remain
+            // the orderDate already passed, immediately return -1
+            if (diffMillis <= 0) {
+                // The scheduled date/time already passed; cannot cancel for a refund
+                transaction.rollback();
+                return new Object[]{newStatus};
+            }
+
+            // Convert difference in milliseconds to hours (truncating down)
+            long diffHours = diffMillis / (1000 * 60 * 60);
+            System.out.println("Now Mills: " + nowMillis);
+            System.out.println("Order Mills: " + orderMillis);
+            System.out.println("diffMillis: " + diffMillis);
+            System.out.println("Diff hours: " + diffHours);
+            double priceRefund = order.getFinalPrice();
             if (diffHours > 3) {
                 newStatus = 1;  // Full Refund
-            } else if (diffHours > 1) {
-                newStatus = 2;  // Partly Refund
+            } else if (diffHours >= 1) {
+                newStatus = 2;  // Partial Refund
+                priceRefund=priceRefund*0.5;
             } else {
-                newStatus = 3;  // No refund
+                newStatus = 3;  // No Refund
+                priceRefund=0;
             }
 
             // 6) Update the order’s status
             order.setStatus(newStatus);
             session.update(order);
             transaction.commit();
-            return newStatus;
+            return new Object[]{newStatus,priceRefund};
         } catch (Exception e) {
             System.err.println("Failed to cancel order: " + e.getMessage());
             e.printStackTrace();
-            return newStatus;
+            return new Object[]{newStatus};
         }
     }
 

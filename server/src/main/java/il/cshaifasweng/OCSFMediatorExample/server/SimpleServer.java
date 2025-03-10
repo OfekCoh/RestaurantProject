@@ -383,9 +383,9 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
-                case "add order":{
+                case "add order": {
                     if (payload.length == 14) {
-                        try{
+                        try {
                             //List<Integer> dishIds, List<String> adaptaions, String orderType, int selectedBranch, Date orderDate, Double finalPrice, String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv
                             List<Integer> dishIds = (List<Integer>) payload[0];
                             List<String> adaptations = (List<String>) payload[1];
@@ -411,7 +411,7 @@ public class SimpleServer extends AbstractServer {
                             BuyerDetails buyerDetails = new BuyerDetails(name, address, phone, userId, cardNum, cardMonth, cardYear, cvv);
 
                             // Create a new Order using the existing constructor
-                            Order newOrder = new Order(selectedBranch, isDelivery, dishIds, adaptations, buyerDetails,orderDate,finalPrice);
+                            Order newOrder = new Order(selectedBranch, isDelivery, dishIds, adaptations, buyerDetails, orderDate, finalPrice);
                             // Set the additional order information
 
 
@@ -421,7 +421,7 @@ public class SimpleServer extends AbstractServer {
 //                                Warning successMsg = new Warning("Order added successfully!");
 //                                client.sendToClient(successMsg);
 
-                                Message response = new Message("orderResponse", new Object[]{"add",orderId});
+                                Message response = new Message("orderResponse", new Object[]{"add", orderId});
                                 client.sendToClient(response);
                             } else {
                                 Warning failMsg = new Warning("Failed to add order!");
@@ -440,20 +440,20 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
-                case "cancel order":{
+                case "cancel order": {
                     if (payload.length == 2) {
-                        try{
+                        try {
                             int orderId = (int) payload[0];
                             String phoneNumber = (String) payload[1];
 
 
                             // cancel the order in the database (update status, we don't want to remove it from the database completely).
-                            int newStatus = DatabaseServer.cancelOrder(orderId, phoneNumber);
-                            if (newStatus != -1) {
+                            Object[] results = DatabaseServer.cancelOrder(orderId, phoneNumber);
+                            if ((int) results[0] != -1) {
 //                                Warning successMsg = new Warning("Order canceled successfully!");
 //                                client.sendToClient(successMsg);
 
-                                Message response = new Message("orderResponse", new Object[]{"cancel",newStatus});
+                                Message response = new Message("orderResponse", new Object[]{"cancel", results[0],results[1]});
                                 client.sendToClient(response);
                             } else {
                                 Warning failMsg = new Warning("Failed to cancel order!");

@@ -10,6 +10,7 @@ import java.io.IOException;
 public class OrderStatusController {
     private static int selectedOrderID;
     private static String type;
+    private static double refundAmount;
 
     @FXML
     private Button backButton;
@@ -30,9 +31,14 @@ public class OrderStatusController {
     public static void setType(String type) {
         OrderStatusController.type = type;
     }
+    public static void setRefundAmount(double amount) {
+        OrderStatusController.refundAmount= amount;
+    }
 
     @FXML
     void initialize() {
+        //Wrap the text of label3
+        label3.setWrapText(true);
         if (type.equalsIgnoreCase("add")) {
             //Order Success, we show the id of the order.
             label2.setText("Order ID: " + selectedOrderID);
@@ -42,10 +48,10 @@ public class OrderStatusController {
             label2.setText("Order Cancelled Successfully!");
             switch (selectedOrderID) {
                 case 1:
-                    label3.setText("You have received a full refund!");
+                    label3.setText("You have received a full refund! refund amount: $" + refundAmount);
                     break;
                 case 2:
-                    label3.setText("You have received a partial refund! (50%) - Cancellation 1-3 hours before the deliver time");
+                    label3.setText("You have received a partial refund! (50%) - Cancellation 1-3 hours before the delivery time , refund amount: $"+ refundAmount);
                     break;
                 case 3:
                     label3.setText("You canceled the order less than an hour before the delivery time, so there is no refund.");
