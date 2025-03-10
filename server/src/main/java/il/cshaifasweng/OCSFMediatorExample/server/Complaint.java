@@ -16,34 +16,38 @@ public class Complaint {
     @Temporal(TemporalType.DATE)
     private Date date;
 
-    private String name;
-    private String creditCardNumber;
+    @Embedded // BuyersDetails fields will be stored in the complaints table
+    private BuyerDetails buyerDetails;
+
+    private int status; // state of complaint: 0 - waiting, 1 - handled by worker, 2 - handled automatically
+    private int refund; // how much was refunded
 
     // Constructors
     public Complaint() {
     }
 
-    public Complaint(String complaint, Date date, String creditCardNumber, String name) {
+    public Complaint(String complaint, Date date, BuyerDetails buyerDetails) {
         this.complaint = complaint;
         this.date = date;
-        this.creditCardNumber = creditCardNumber;
-        this.name = name;
-
+        this.buyerDetails = buyerDetails;
+        this.status = 0;
+        this.refund = 0;
     }
 
     // Getters and setters
-    public String getCreditCardNumber() {
-        return creditCardNumber;
-    }
-    public void setCreditCardNumber(String creditCardNumber) {
-        this.creditCardNumber = creditCardNumber;
-    }
-    public String getName() {
-        return name;
-    }
-    public void setName(String name) {
-        this.name = name;
-    }
+
+    public int getRefund() { return refund;}
+
+    public void setRefund(int refund) { this.refund = refund;}
+
+    public int getStatus() { return this.status; }
+
+    public void setStatus(int status) { this.status = status; }
+
+    public void setBuyerDetails(BuyerDetails buyerDetails) { this.buyerDetails = buyerDetails;}
+
+    public BuyerDetails getBuyerDetails() { return buyerDetails;}
+
     public int getComplaintId() {
         return complaintId;
     }

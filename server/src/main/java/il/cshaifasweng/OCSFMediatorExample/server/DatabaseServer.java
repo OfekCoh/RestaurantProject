@@ -527,8 +527,69 @@ public class DatabaseServer {
             e.printStackTrace();
         }
     }
+    public static void handleComplaint(int complaintId, int refund) {
+        Transaction transaction = null;
+        try (Session session = getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
 
+            // Retrieve the existing complaint
+            Complaint existingComplaint = session.get(Complaint.class, complaintId);
+            if (existingComplaint == null) {
+                System.out.println("Complaint with ID " + complaintId + " does not exist.");
 
+            }
+
+            // Update the status and refund fields
+            existingComplaint.setStatus(1);
+            existingComplaint.setRefund(refund); // Assuming 'refund' exists in Complaint entity
+
+            // Persist the update
+            session.update(existingComplaint);
+            transaction.commit();
+            System.out.println("Complaint with ID " + complaintId + " handled, refunded amount: " + refund);
+
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
+        }
+    }
+
+    // auto handle old complaints
+    public static boolean autoHandleOldComplaints() {
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            // Get current time minus 24 hours
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.HOUR, -24);
+            Date twentyFourHoursAgo = cal.getTime();
+
+            // Find complaints older than 24 hours with status 0 (waiting)
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaUpdate<Complaint> updateQuery = builder.createCriteriaUpdate(Complaint.class);
+            Root<Complaint> root = updateQuery.from(Complaint.class);
+
+            updateQuery.set(root.get("status"), 2); // Change status to 2
+            updateQuery.where(
+                    builder.equal(root.get("status"), 0),
+                    builder.lessThan(root.get("date"), twentyFourHoursAgo)
+            );
+
+            int updatedRows = session.createQuery(updateQuery).executeUpdate();
+            transaction.commit();
+
+            if (updatedRows > 0) {
+                System.out.println("Updated " + updatedRows + " complaints to status 2 (auto-handled).");
+                return true;  //  Returns `true` if complaints were updated
+            }
+        } catch (Exception e) {
+            System.err.println("Error auto-handling old complaints: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false; // Returns `false` if no complaints were updated
+    }
 //    private static <T> List<T> getAllEntities(Class<T> entityClass) throws Exception {
 //        CriteriaBuilder builder = session.getCriteriaBuilder();
 //        CriteriaQuery<T> query = builder.createQuery(entityClass);

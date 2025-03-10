@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.SubscribedClient;
 
@@ -22,6 +25,7 @@ public class SimpleServer extends AbstractServer {
         DatabaseServer.password = databasePassword;
         // create the database
         databaseServer = new DatabaseServer(databasePassword);
+        startComplaintChecker();
     }
 
     @Override
@@ -500,23 +504,32 @@ public class SimpleServer extends AbstractServer {
                 }
 
                 // -----------------------------------------------------------
-                // complain command
+                // complaints commands
                 // -----------------------------------------------------------
                 case "complaint": {
-                    if (payload.length == 4) {
+                    if (payload.length == 10) {
                         String complaintText = (String) payload[0];
                         Date date = (Date) payload[1];
                         String name = (String) payload[2];
-                        String creditCardNumber = (String) payload[3];
+                        String address = (String) payload[3];
+                        String phone = (String) payload[4];
+                        String userId = (String) payload[5];
+                        String cardNum = (String) payload[6];
+                        int cardMonth = (int) payload[7];
+                        int cardYear = (int) payload[8];
+                        String cvv = (String) payload[9];
 
-                        Complaint newComplaint = new Complaint(complaintText, date, creditCardNumber, name);
-
+                        Complaint newComplaint = new Complaint(complaintText, date, new BuyerDetails(name, address, phone, userId, cardNum, cardMonth, cardYear, cvv));
                         try {
                             boolean result = DatabaseServer.addComplaint(newComplaint);
 
                             if (result) {
                                 Warning successMsg = new Warning("Complaint successfully added!");
                                 client.sendToClient(successMsg);
+
+                                // send new list of complaints to client
+                                sendToAllClients(complaintsResponse());
+
                             } else {
                                 Warning failMsg = new Warning("Failed to add Complaint!");
                                 client.sendToClient(failMsg);
@@ -540,6 +553,28 @@ public class SimpleServer extends AbstractServer {
                     break;
 
                 }
+                case "handle complaint":
+                    if(payload.length == 2) {
+                        int complaintId = (int) payload[0];
+                        int refund = (int) payload[1];
+                        DatabaseServer.handleComplaint(complaintId, refund);
+                        // send updated complaints to client
+                        try {
+                            sendToAllClients(complaintsResponse());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    }
+
+                case "get complaints": {
+                    try {
+                        client.sendToClient(complaintsResponse());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                }
 
 
 
@@ -558,7 +593,15 @@ public class SimpleServer extends AbstractServer {
         }
     }
 
-    public void sendToAllClients(String message) {
+    // send complaints to client for complaints handling
+    public Message complaintsResponse() {
+        List<ComplaintEnt> complaints = DatabaseServer.getComplaints();
+        System.out.println("Complaints: " + complaints.size());
+        return new Message("complaints response", new Object[]{complaints});
+    }
+
+    // send message for all the cilents
+    public void sendToAllClients(Message message) {
         try {
             for (SubscribedClient subscribedClient : SubscribersList) {
                 subscribedClient.getClient().sendToClient(message);
@@ -568,4 +611,17 @@ public class SimpleServer extends AbstractServer {
         }
     }
 
+    // check complaints periodically to auto handle complaints older than 24 hours
+    private void startComplaintChecker() {
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        scheduler.scheduleAtFixedRate(() -> {
+            boolean complaintsUpdated = DatabaseServer.autoHandleOldComplaints();
+
+            // Only notify clients if complaints were updated
+            if (complaintsUpdated) {
+                System.out.println("Auto-handled complaints. Notifying clients...");
+
+            }
+        }, 0, 10, TimeUnit.MINUTES);
+    }
 }

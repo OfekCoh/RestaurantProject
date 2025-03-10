@@ -1,9 +1,6 @@
 package il.cshaifasweng.OCSFMediatorExample.client;
 
-import il.cshaifasweng.OCSFMediatorExample.client.Events.DishEvent;
-import il.cshaifasweng.OCSFMediatorExample.client.Events.LoginEvent;
-import il.cshaifasweng.OCSFMediatorExample.client.Events.MenuChangeEvent;
-import il.cshaifasweng.OCSFMediatorExample.client.Events.WarningEvent;
+import il.cshaifasweng.OCSFMediatorExample.client.Events.*;
 import il.cshaifasweng.OCSFMediatorExample.entities.*;
 import javafx.application.Platform;
 import org.greenrobot.eventbus.EventBus;
@@ -134,12 +131,22 @@ public class SimpleClient extends AbstractClient {
                     break;
                 }
 
+                case "complaints response": {
+                    List<ComplaintEnt> complaints = (List<ComplaintEnt>) payload[0];
+                    EventBus.getDefault().post(new ComplaintEvent(complaints));
+                    System.out.println("Recieved list of Complaints ");
+                    break;
+                }
+
+
                 // If you want server to respond with a "menuResponse" message, do it here
                 // case "menuResponse": { ... } break;
 
                 default:
                     System.out.println("Client: Unknown command from server: " + command);
                     break;
+
+
             }
         }
         // 2) Otherwise, check if it's a known entity like MenuEnt, Warning, etc.
@@ -239,8 +246,8 @@ public class SimpleClient extends AbstractClient {
     }
 
     // need to add buyer details?
-    public void sendComplaint(String complaintText, Date date, String name, String creditCardNumber) throws IOException {
-        Message message = new Message("complaint", new Object[]{complaintText, date, name, creditCardNumber});
+    public void sendComplaint(String complaintText, Date date, String name, String address, String phone, String userID, String cardNumber, Integer month,Integer  year, String cvv) throws IOException {
+        Message message = new Message("complaint", new Object[]{complaintText, date, name, address, phone, userID, cardNumber, month, year, cvv});
         sendToServer(message);
     }
     public static SimpleClient getClient() {
@@ -248,6 +255,15 @@ public class SimpleClient extends AbstractClient {
             client = new SimpleClient(ip, port);
         }
         return client;
+    }
+
+    public void sendGetComplaints() throws Exception {
+        Message message = new Message("get complaints", new Object[]{});
+        sendToServer(message);
+    }
+    public void sendHandleComplaint(int complaintID, int refund) throws Exception {
+        Message message = new Message("handle complaint", new Object[]{complaintID, refund});
+        sendToServer(message);
     }
 
 }

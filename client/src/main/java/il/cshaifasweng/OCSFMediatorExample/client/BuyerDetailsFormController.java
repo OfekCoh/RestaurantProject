@@ -5,10 +5,15 @@ import javafx.scene.control.*;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.stream.IntStream;
 
 public class BuyerDetailsFormController {
 
+    private static String previousFXML; // to determine which order to perform
+    public static void setPreviousFXML(String previousFXML) {
+        BuyerDetailsFormController.previousFXML = previousFXML;
+    }
     @FXML
     private TextField nameField;
     @FXML
@@ -52,8 +57,10 @@ public class BuyerDetailsFormController {
         // Optionally set default selection to currentMonth / currentYear
         monthCombo.setValue(currentMonth);
         yearCombo.setValue(currentYear);
+        if(previousFXML != null && previousFXML.equals("order")) {
+            totalCostLabel.setText(String.format("Total Cost: $%.2f", OrderManage.getFinalPrice()));
+        }
 
-        totalCostLabel.setText(String.format("Total Cost: $%.2f", OrderManage.getFinalPrice()));
     }
 
     @FXML
@@ -131,28 +138,52 @@ public class BuyerDetailsFormController {
                 "ID: %s, Card#: %s, Expiry: %02d/%d, CVV: %s%n",
                 userID, cardNumber, month, year, cvv
         );
+
         //If we got here, it means everything checks out, so we will submit the order.
 
         //I know it's possible to make it shorter similiar to the idea of my paylod in messages, but I prefer to currently leave it as it and not to "compress" it for future changes that may be needed.
         //List<Integer> dishIds, List<String> Adaptaions, String OrderType, int selectedBranch, Date orderDate, Double finalPrice, String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv
         try {
-            SimpleClient.getClient().sendAddOrder(OrderManage.getDishIds(),OrderManage.getAdaptations(),OrderManage.getOrderType(),OrderManage.getSelectedBranch(),OrderManage.getOrderDate(),OrderManage.getFinalPrice(),name,address,phone,userID,cardNumber,month,year,cvv);
+            //decide what happen on submit based on previous fxml
+            switch (previousFXML){
+                case "order":
+                    SimpleClient.getClient().sendAddOrder(OrderManage.getDishIds(),OrderManage.getAdaptations(),OrderManage.getOrderType(),OrderManage.getSelectedBranch(),OrderManage.getOrderDate(),OrderManage.getFinalPrice(),name,address,phone,userID,cardNumber,month,year,cvv);
+                    break;
+
+                case "complaint":
+                    SimpleClient.getClient().sendComplaint(ComplaintController.getComplainText(), new Date(), name, address, phone, userID, cardNumber, month, year, cvv);
+                break;
+
+                default:
+                    break;
+
+            }
+            App.setRoot("primary");
         } catch (IOException e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR,
-                    String.format("Message: %s\n",
-                            "Order Submission Failed, please try again!"
-                    ));
-            alert.show();
-            throw new RuntimeException(e);
+        Alert alert = new Alert(Alert.AlertType.ERROR,
+                String.format("Message: %s\n",
+                        "Order Submission Failed, please try again!"
+                ));
+        alert.show();
+        throw new RuntimeException(e);
         }
-
-
-        // You can store this data or proceed.
-        // e.g. App.setRoot("nextScene");
     }
 
     @FXML
     private void onBack() throws IOException {
-        App.setRoot("cart");
+        // decide which page to return on back
+        switch (previousFXML){
+            case "order":
+                App.setRoot("cart");
+                break;
+
+            case "complaint":
+                App.setRoot("complaint");
+                break;
+
+            default:
+                break;
+        }
+
     }
 }

@@ -110,8 +110,7 @@ public class Convertor {
     public static ComplaintEnt convertToComplaintEnt(Complaint complaint) {
         if (complaint == null) return null;
         System.out.println("Converting Complaint: " + complaint.getComplaintId());
-        ComplaintEnt convertedComplaint = new ComplaintEnt(complaint.getComplaintId(), complaint.getComplaint(), complaint.getDate(), complaint.getName(), complaint.getCreditCardNumber());
-        return convertedComplaint;
+        return new ComplaintEnt(complaint.getComplaintId(), complaint.getComplaint(), complaint.getDate(), complaint.getBuyerDetails().getName(), complaint.getStatus());
 
     }
     public static List<ComplaintEnt> convertToComplaintEntList(List<Complaint> complaintsList) {

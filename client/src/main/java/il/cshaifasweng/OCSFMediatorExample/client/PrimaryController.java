@@ -68,7 +68,7 @@ public class PrimaryController {
     //טיפול בתלונה
     @FXML
     void switchToComplaintHandler(ActionEvent event) throws IOException {
-
+        App.setRoot("handleComplaints");
     }
 
     @FXML

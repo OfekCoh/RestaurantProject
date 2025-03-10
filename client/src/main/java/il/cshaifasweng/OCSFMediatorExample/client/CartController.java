@@ -117,6 +117,7 @@ public class CartController {
             if (!OrderManage.getDishIds().isEmpty()) {
                 OrderManage.setFinalPrice(totalPrice);
                 System.out.println("FinalPrice: " + OrderManage.getFinalPrice());
+                BuyerDetailsFormController.setPreviousFXML("order");
                 App.setRoot("buyerForm");
             } else {
                 Alert alert = new Alert(Alert.AlertType.INFORMATION,
