@@ -7,6 +7,7 @@ import org.hibernate.cfg.Configuration;
 import org.hibernate.service.ServiceRegistry;
 
 import javax.persistence.criteria.*;
+import java.io.InputStream;
 import java.util.*;
 
 import static il.cshaifasweng.OCSFMediatorExample.server.Convertor.*;
@@ -73,10 +74,10 @@ public class DatabaseServer {
          */
 
         // Chain-wide dishes (Branch ID 0)
-        Dish dish1 = new Dish(15.99, "French Fries", "Crispy golden fries with a side of ketchup.", 0, Arrays.asList("Potatoes", "Salt", "Oil"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=", 5.99, true);
-        Dish dish2 = new Dish(12, "Garlic Bread", "Toasted bread with garlic and butter.", 0, Arrays.asList("Bread", "Butter", "Garlic"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
-        Dish dish3 = new Dish(20, "Spaghetti Bolognese", "Traditional Italian pasta with meat sauce.", 0, Arrays.asList("Pasta", "Ground Beef", "Tomato Sauce", "Parmesan"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
-        Dish dish4 = new Dish(18, "Greek Salad", "Fresh vegetables with feta cheese and olives.", 0, Arrays.asList("Lettuce", "Tomatoes", "Feta Cheese", "Olives"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
+        Dish dish1 = new Dish(15.99, "French Fries", "Crispy golden fries with a side of ketchup.", 0, Arrays.asList("Potatoes", "Salt", "Oil"), encodeImageToBase64("frenchFries"), 5.99, true);
+        Dish dish2 = new Dish(12, "Garlic Bread", "Toasted bread with garlic and butter.", 0, Arrays.asList("Bread", "Butter", "Garlic"), encodeImageToBase64("garlicBread"));
+        Dish dish3 = new Dish(20, "Spaghetti Bolognese", "Traditional Italian pasta with meat sauce.", 0, Arrays.asList("Pasta", "Ground Beef", "Tomato Sauce", "Parmesan"), encodeImageToBase64("spaghettiBolognese"));
+        Dish dish4 = new Dish(18, "Greek Salad", "Fresh vegetables with feta cheese and olives.", 0, Arrays.asList("Lettuce", "Tomatoes", "Feta Cheese", "Olives"), encodeImageToBase64("greekSalad"));
 
         session.save(dish1);
         session.save(dish2);
@@ -85,9 +86,9 @@ public class DatabaseServer {
         session.flush();
 
         // Branch-specific dishes (Branch ID 1)
-        Dish dish5 = new Dish(25, "Margherita Pizza", "Classic Italian pizza with fresh tomatoes and basil.", 1, Arrays.asList("Tomato", "Mozzarella", "Basil"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
-        Dish dish6 = new Dish(30, "Caesar Salad", "Crispy romaine lettuce with Caesar dressing and parmesan.", 1, Arrays.asList("Lettuce", "Croutons", "Parmesan", "Caesar Dressing"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
-        Dish dish7 = new Dish(28, "Grilled Salmon", "Freshly grilled salmon with lemon butter sauce.", 1, Arrays.asList("Salmon", "Lemon", "Butter", "Garlic"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
+        Dish dish5 = new Dish(25, "Margherita Pizza", "Classic Italian pizza with fresh tomatoes and basil.", 1, Arrays.asList("Tomato", "Mozzarella", "Basil"), encodeImageToBase64("pizza"));
+        Dish dish6 = new Dish(30, "Caesar Salad", "Crispy romaine lettuce with Caesar dressing and parmesan.", 1, Arrays.asList("Lettuce", "Croutons", "Parmesan", "Caesar Dressing"), encodeImageToBase64("caesarSalad"));
+        Dish dish7 = new Dish(28, "Grilled Salmon", "Freshly grilled salmon with lemon butter sauce.", 1, Arrays.asList("Salmon", "Lemon", "Butter", "Garlic"), encodeImageToBase64("grilledSalmon"));
 
         session.save(dish5);
         session.save(dish6);
@@ -95,9 +96,9 @@ public class DatabaseServer {
         session.flush();
 
         // Branch-specific dishes (Branch ID 2)
-        Dish dish8 = new Dish(22, "BBQ Chicken Wings", "Spicy and tangy chicken wings with BBQ sauce.", 2, Arrays.asList("Chicken", "BBQ Sauce", "Spices"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
-        Dish dish9 = new Dish(10, "Mozzarella Sticks", "Fried mozzarella sticks with marinara sauce.", 2, Arrays.asList("Mozzarella", "Breadcrumbs", "Marinara Sauce"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
-        Dish dish10 = new Dish(35, "Ribeye Steak", "Juicy ribeye steak served with mashed potatoes.", 2, Arrays.asList("Beef", "Potatoes", "Butter"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
+        Dish dish8 = new Dish(22, "BBQ Chicken Wings", "Spicy and tangy chicken wings with BBQ sauce.", 2, Arrays.asList("Chicken", "BBQ Sauce", "Spices"), encodeImageToBase64("bbqChickenWings"));
+        Dish dish9 = new Dish(10, "Mozzarella Sticks", "Fried mozzarella sticks with marinara sauce.", 2, Arrays.asList("Mozzarella", "Breadcrumbs", "Marinara Sauce"), encodeImageToBase64("mozzarellaSticks"));
+        Dish dish10 = new Dish(35, "Ribeye Steak", "Juicy ribeye steak served with mashed potatoes.", 2, Arrays.asList("Beef", "Potatoes", "Butter"), encodeImageToBase64("ribeyeSteak"));
 
         session.save(dish8);
         session.save(dish9);
@@ -130,6 +131,31 @@ public class DatabaseServer {
         session.save(w6);
         session.flush();
 
+    }
+
+    /**
+     * This function encodes images to base64 for the database creation, for starter images
+     * @param name - the file name in the starterImages directory
+     * @return returns base64 of an image, so it can be loaded into the database.
+     */
+    public static String encodeImageToBase64(String name) throws Exception {
+
+        try (InputStream is = DatabaseServer.class.getResourceAsStream("./starterImages/"+name+".jpg")) {
+            byte[] fileContent = is.readAllBytes();
+            String base64 = Base64.getEncoder().encodeToString(fileContent);
+            return base64;
+        } catch (Exception e) {
+            return null;
+        }
+
+
+//        Path path = (Path) Paths.get("starterImages", name+".jpg");        // read all bytes from the file
+//        byte[] fileBytes = Files.readAllBytes(path);
+//        // encode as base64 (convert to base64)
+//        String encodedString = Base64.getEncoder().encodeToString(fileBytes);
+//        // optionally prepend the MIME type
+////        return "data:image/jpeg;base64," + encodedString;
+//        return encodedString;
     }
 
     public static List<RestaurantBranch> getAllBranches(Session session) throws Exception {

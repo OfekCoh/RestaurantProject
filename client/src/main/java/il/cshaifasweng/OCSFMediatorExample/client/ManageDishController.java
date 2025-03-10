@@ -220,7 +220,7 @@ public class ManageDishController {
                 if(SimpleClient.ruleID==4){ //CEO - has permission to edit
                     System.out.println("Updating prices for dish: " + updatedDish);
                     SimpleClient.getClient().sendUpdatePriceCommand(editingDish.getId(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice());
-                }else{ //Not CEO - will need to be approved by the ceo. //TODO!
+                }else{ //Not CEO - will need to be approved by the ceo.
                     System.out.println("adding menuChanges for dish"+ editingDish +" After: \n"+updatedDish);
                     SimpleClient.getClient().sendAddMenuChange(editingDish.getId(), editingDish.getPrice(), editingDish.getIsSalePrice(), editingDish.getSalePrice(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice());
                 }
