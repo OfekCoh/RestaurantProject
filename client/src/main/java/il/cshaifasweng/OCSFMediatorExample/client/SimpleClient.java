@@ -228,6 +228,11 @@ public class SimpleClient extends AbstractClient {
         sendToServer(message);
     }
 
+//    public void sendAddTableOrder(String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv) throws IOException {
+//        Message message = new Message("add table order", new Object[]{name, address, phone, userId, cardNumber, month, year, cvv});
+//        sendToServer(message);
+//    }
+
     public void sendLoginCommand(String email, String password) throws Exception {
         Message message = new Message("login", new Object[]{email, password});
         sendToServer(message);

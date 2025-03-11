@@ -296,6 +296,27 @@ public class DatabaseServer {
         }
     }
 
+//    public static int addTableOrder(TableOrder newTableOrder) {
+//        int orderId=-1;
+//        try (Session session = getSessionFactory().openSession()) {
+//            Transaction transaction = session.beginTransaction();
+//
+//            orderId = (Integer) session.save(newOrder);
+//
+//            if (session.contains(newOrder)) { //Check if successfully added
+//                transaction.commit();
+//                return orderId;
+//            } else {
+//                transaction.rollback();
+//                System.err.println("Failed to insert order: " + newOrder);
+//                return orderId;
+//            }
+//        } catch (Exception e) {
+//            System.err.println("Failed to add order: " + e.getMessage());
+//            e.printStackTrace();
+//            return orderId;
+//        }
+//    }
 
     public static boolean addDish(Dish newDish) {
         try (Session session = getSessionFactory().openSession()) {

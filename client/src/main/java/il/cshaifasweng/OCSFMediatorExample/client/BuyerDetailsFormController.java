@@ -159,8 +159,12 @@ public class BuyerDetailsFormController {
 
             case "orderTable":
                 System.out.println("submitting a table order");
-                // probably will show a message order completed and go back to primary
                 // also update database for these tables to be taken at the next 1.5 hours
+                Alert alert = new Alert(Alert.AlertType.INFORMATION,
+                        String.format("Message: %s\n",
+                                "Order Completed!"
+                        ));
+                alert.show();
                 App.setRoot("primary");
 
                 break;

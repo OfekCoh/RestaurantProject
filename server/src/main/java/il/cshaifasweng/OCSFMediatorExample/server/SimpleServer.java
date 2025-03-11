@@ -93,6 +93,7 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
+
                 case "get menuChanges": {
                     try {
                         List<MenuChangeEnt> menuChanges = DatabaseServer.getMenuChanges();
@@ -105,6 +106,7 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
+
                 case "add menuChanges": {
                     if (payload.length == 7) {
                         int dishId = (int) payload[0];
@@ -149,6 +151,7 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
+
                 case "set menuChanges": {
                     if (payload.length == 6) {
                         int menuChangeID = (int) payload[0];
@@ -323,6 +326,7 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
+
                 case "update dish": {
                     // Expect payload in the order:
                     // [int dishId, String name, String description,
@@ -383,6 +387,7 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
+
                 case "add order":{
                     if (payload.length == 14) {
                         try{
@@ -440,6 +445,65 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
+
+//                case "add table order":{
+//                    if (payload.length == 15) {
+//                        try{
+//                            //List<Integer> dishIds, List<String> adaptaions, String orderType, int selectedBranch, Date orderDate, Double finalPrice, String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv
+//                            List<Integer> dishIds = (List<Integer>) payload[0];
+//                            List<String> adaptations = (List<String>) payload[1];
+//                            String orderType = (String) payload[2];
+//                            int selectedBranch = (int) payload[3];
+//                            Date orderDate = (Date) payload[4];
+//                            double finalPrice = (double) payload[5];
+//                            String name = (String) payload[6];
+//                            String address = (String) payload[7];
+//                            String phone = (String) payload[8];
+//                            String userId = (String) payload[9];
+//                            String cardNum = (String) payload[10];
+//                            int cardMonth = (int) payload[11];
+//                            int cardYear = (int) payload[12];
+//                            String cvv = (String) payload[13];
+//
+//
+//                            // Determine if the order is for delivery
+//                            boolean isDelivery = orderType.equalsIgnoreCase("delivery");
+//
+//                            // Create BuyerDetails with buyer's info.
+//                            // (Assuming BuyerDetails has a matching constructor.)
+//                            BuyerDetails buyerDetails = new BuyerDetails(name, address, phone, userId, cardNum, cardMonth, cardYear, cvv);
+//
+//                            // Create a new Order using the existing constructor
+//                            Order newOrder = new Order(selectedBranch, isDelivery, dishIds, adaptations, buyerDetails,orderDate,finalPrice);
+//                            // Set the additional order information
+//
+//
+//                            // Save the order to the database
+//                            int orderId = DatabaseServer.addOrder(newOrder);
+//                            if (orderId != -1) {
+////                                Warning successMsg = new Warning("Order added successfully!");
+////                                client.sendToClient(successMsg);
+//
+//                                Message response = new Message("orderResponse", new Object[]{orderId});
+//                                client.sendToClient(response);
+//                            } else {
+//                                Warning failMsg = new Warning("Failed to add order!");
+//                                client.sendToClient(failMsg);
+//                            }
+//
+//                        } catch (Exception e) {
+//                            try {
+//                                Warning failMsg = new Warning("Error, Failed to add order: " + e.getMessage());
+//                                client.sendToClient(failMsg);
+//                            } catch (IOException ex) {
+//                                throw new RuntimeException(ex);
+//                            }
+//                            throw new RuntimeException(e);
+//                        }
+//                    }
+//                    break;
+//                }
+
 
                 // -----------------------------------------------------------
                 // login

@@ -234,15 +234,20 @@ public class OrderTableController {
         // check if theres room
         // if yes- go to payment
         //
-        // if no- show other hours avaialble in that day,
+        // if no- show other hours available in that day,
         // or ask to change to a different branch with same parameters
 
-        // if its a worker (host) adding the branch it shouldnt go to payment.
 
-        BuyerDetailsFormController.setCallerType("orderTable");  // Pass caller "cart" to buyerform
-        App.setRoot("buyerForm");
+        if(SimpleClient.userID != -1) {   // if it's a worker
+            System.out.println("Worker gave costumers a table");
+            App.setRoot("primary");
+        }
+        else {  // if it's a costumer
+            System.out.println("A costumer wants to get a table, sending him to fill payments");
+            BuyerDetailsFormController.setCallerType("orderTable");  // Pass caller "cart" to buyerform
+            App.setRoot("buyerForm");
+        }
     }
-
 
     /**
      * Utility method to display an alert dialog.
