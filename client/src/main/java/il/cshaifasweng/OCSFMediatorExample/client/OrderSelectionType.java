@@ -3,6 +3,7 @@ package il.cshaifasweng.OCSFMediatorExample.client;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 
 import java.io.IOException;
 
@@ -17,10 +18,13 @@ public class OrderSelectionType {
     private Button backButton;
 
     @FXML
-    private Button deliveryButton;
+    private Button leftButton;
 
     @FXML
-    private Button pickupButton;
+    private Button rightButton;
+
+    @FXML
+    private Label mainLabel;
 
     @FXML
     void goBack(ActionEvent event) throws IOException {
@@ -28,16 +32,37 @@ public class OrderSelectionType {
     }
 
     @FXML
-    void selectDelivery(ActionEvent event) throws IOException {
-        OrderManage.setOrderType("Delivery");
-        App.setRoot("selectDeliveryLocation");
-
+    void selectRightButton(ActionEvent event) throws IOException {
+        if(selectedMode.equalsIgnoreCase("order")) {
+            OrderManage.setOrderType("Delivery");
+            App.setRoot("selectDeliveryLocation");
+        }else{
+            //Cancel Table Order
+            CancelOrderController.setOrderType("table");
+            App.setRoot("cancelOrder");
+        }
     }
 
     @FXML
-    void selectPickup(ActionEvent event) throws IOException {
-        OrderManage.setOrderType("Pickup");
-        App.setRoot("selectDeliveryLocation");
+    void selectLeftButton(ActionEvent event) throws IOException {
+        if(selectedMode.equalsIgnoreCase("order")) {
+            OrderManage.setOrderType("Pickup");
+            App.setRoot("selectDeliveryLocation");
+        }
+        else{
+            //Cancel Order
+            CancelOrderController.setOrderType("order");
+            App.setRoot("cancelOrder");
+        }
+    }
+
+    @FXML
+    void initialize() {
+       if(!selectedMode.equalsIgnoreCase("order")) { //Not Order
+           mainLabel.setText("Select what to cancel");
+           leftButton.setText("Cancel Order");
+           rightButton.setText("Cancel Table Order");
+       }
     }
 
 }

@@ -281,17 +281,18 @@ public class SimpleServer extends AbstractServer {
                 }
 
                 case "add dish": {
-                    if (payload.length == 8) {
+                    if (payload.length == 9) {
                         String name = (String) payload[0];
                         String description = (String) payload[1];
                         int branchID = (int) payload[2];
                         List<String> ingredients = (List<String>) payload[3];
-                        String image = (String) payload[4];
-                        double price = (double) payload[5];
-                        boolean isSalePrice = (boolean) payload[6];
-                        double salePrice = (double) payload[7];
+                        List<String> toppings = (List<String>) payload[4];
+                        String image = (String) payload[5];
+                        double price = (double) payload[6];
+                        boolean isSalePrice = (boolean) payload[7];
+                        double salePrice = (double) payload[8];
 
-                        Dish newDish = new Dish(price, name, description, branchID, ingredients, image, salePrice, isSalePrice);
+                        Dish newDish = new Dish(price, name, description, branchID, ingredients,toppings, image, salePrice, isSalePrice);
 
                         try {
                             Boolean result = DatabaseServer.addDish(newDish);
@@ -332,18 +333,19 @@ public class SimpleServer extends AbstractServer {
                     // [int dishId, String name, String description,
                     //  int branchID, List<String> ingredients, String image, int price]
 
-                    if (payload.length == 9) {
+                    if (payload.length == 10) {
                         int dishId = (int) payload[0];
                         String name = (String) payload[1];
                         String desc = (String) payload[2];
                         int branchID = (int) payload[3];
                         List<String> ingr = (List<String>) payload[4];
-                        String image = (String) payload[5];
-                        double price = (double) payload[6];
-                        boolean isSalePrice = (boolean) payload[7];
-                        double salePrice = (double) payload[8];
+                        List<String> toppings = (List<String>) payload[5];
+                        String image = (String) payload[6];
+                        double price = (double) payload[7];
+                        boolean isSalePrice = (boolean) payload[8];
+                        double salePrice = (double) payload[9];
 
-                        Dish dishToUpdate = new Dish(price, name, desc, branchID, ingr, image, salePrice, isSalePrice);
+                        Dish dishToUpdate = new Dish(price, name, desc, branchID, ingr,toppings, image, salePrice, isSalePrice);
                         dishToUpdate.setId(dishId);
 
                         // Wrap the updateDish call in a broad try/catch
@@ -387,9 +389,9 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
-                case "add order":{
+                case "add order": {
                     if (payload.length == 14) {
-                        try{
+                        try {
                             //List<Integer> dishIds, List<String> adaptaions, String orderType, int selectedBranch, Date orderDate, Double finalPrice, String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv
                             List<Integer> dishIds = (List<Integer>) payload[0];
                             List<String> adaptations = (List<String>) payload[1];
@@ -415,7 +417,7 @@ public class SimpleServer extends AbstractServer {
                             BuyerDetails buyerDetails = new BuyerDetails(name, address, phone, userId, cardNum, cardMonth, cardYear, cvv);
 
                             // Create a new Order using the existing constructor
-                            Order newOrder = new Order(selectedBranch, isDelivery, dishIds, adaptations, buyerDetails,orderDate,finalPrice);
+                            Order newOrder = new Order(selectedBranch, isDelivery, dishIds, adaptations, buyerDetails, orderDate, finalPrice);
                             // Set the additional order information
 
 
@@ -425,7 +427,7 @@ public class SimpleServer extends AbstractServer {
 //                                Warning successMsg = new Warning("Order added successfully!");
 //                                client.sendToClient(successMsg);
 
-                                Message response = new Message("orderResponse", new Object[]{orderId});
+                                Message response = new Message("orderResponse", new Object[]{"add", orderId});
                                 client.sendToClient(response);
                             } else {
                                 Warning failMsg = new Warning("Failed to add order!");
@@ -435,6 +437,38 @@ public class SimpleServer extends AbstractServer {
                         } catch (Exception e) {
                             try {
                                 Warning failMsg = new Warning("Error, Failed to add order: " + e.getMessage());
+                                client.sendToClient(failMsg);
+                            } catch (IOException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    break;
+                }
+                case "cancel order": {
+                    if (payload.length == 2) {
+                        try {
+                            int orderId = (int) payload[0];
+                            String phoneNumber = (String) payload[1];
+
+
+                            // cancel the order in the database (update status, we don't want to remove it from the database completely).
+                            Object[] results = DatabaseServer.cancelOrder(orderId, phoneNumber);
+                            if ((int) results[0] != -1) {
+//                                Warning successMsg = new Warning("Order canceled successfully!");
+//                                client.sendToClient(successMsg);
+
+                                Message response = new Message("orderResponse", new Object[]{"cancel", results[0],results[1]});
+                                client.sendToClient(response);
+                            } else {
+                                Warning failMsg = new Warning("Failed to cancel order!");
+                                client.sendToClient(failMsg);
+                            }
+
+                        } catch (Exception e) {
+                            try {
+                                Warning failMsg = new Warning("Error, Failed to cancel order: " + e.getMessage());
                                 client.sendToClient(failMsg);
                             } catch (IOException ex) {
                                 throw new RuntimeException(ex);

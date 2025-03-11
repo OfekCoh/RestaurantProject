@@ -14,8 +14,16 @@ public class Convertor {
                 .map(dish -> {
                     // Pull out the List<String> first
                     List<String> ingredients = dish.getIngredients();
+                    List<String> toppings = dish.getToppings();
+
                     // Convert it to String[]
                     String[] ingredientsArr = ingredients.toArray(new String[ingredients.size()]);
+                    String[] toppingsArr;
+                    if(!toppings.isEmpty()) {
+                        toppingsArr = toppings.toArray(new String[toppings.size()]);
+                    }else{
+                        toppingsArr = new String[0];
+                    }
 
                     // Now create the DishEnt
                     return new DishEnt(
@@ -23,6 +31,7 @@ public class Convertor {
                             dish.getName(),
                             dish.getDescription(),
                             ingredientsArr,
+                            toppingsArr,
                             dish.getPrice(),
                             dish.getBranchID(),
                             dish.getImage(),

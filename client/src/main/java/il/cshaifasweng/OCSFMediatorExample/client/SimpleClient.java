@@ -122,8 +122,15 @@ public class SimpleClient extends AbstractClient {
                     System.out.println("Received orderResponse with " + payload[0] + " ID.");
                     Platform.runLater(() -> {
                         try {
-                            OrderSuccessController.setOrderID((int) payload[0]);
-                            App.setRoot("orderSuccess");
+                            OrderStatusController.setType((String) payload[0]);
+                            OrderStatusController.setOrderID((int) payload[1]);
+                            if(((String) payload[0]).equalsIgnoreCase("cancel"))
+                            {
+                                OrderStatusController.setRefundAmount((double) payload[2]);
+                            }else{
+                                OrderStatusController.setRefundAmount(0);
+                            }
+                            App.setRoot("orderStatus");
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -202,7 +209,7 @@ public class SimpleClient extends AbstractClient {
     public void sendAddDishCommand(DishEnt updatedDish) {
         System.out.println("Client: Add Dish: " + updatedDish);
         try {
-            Message message = new Message("add dish", new Object[]{updatedDish.getName(), updatedDish.getDescription(), updatedDish.getBranchID(), Arrays.asList(updatedDish.getIngredients()), updatedDish.getImage(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice()});
+            Message message = new Message("add dish", new Object[]{updatedDish.getName(), updatedDish.getDescription(), updatedDish.getBranchID(), Arrays.asList(updatedDish.getIngredients()),Arrays.asList(updatedDish.getToppings()), updatedDish.getImage(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice()});
             sendToServer(message);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -213,7 +220,7 @@ public class SimpleClient extends AbstractClient {
         System.out.println("Client: Update Dish: " + updatedDish);
         try {
             // We'll pack all relevant fields into the payload array
-            Message message = new Message("update dish", new Object[]{updatedDish.getId(), updatedDish.getName(), updatedDish.getDescription(), updatedDish.getBranchID(), Arrays.asList(updatedDish.getIngredients()), updatedDish.getImage(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice()});
+            Message message = new Message("update dish", new Object[]{updatedDish.getId(), updatedDish.getName(), updatedDish.getDescription(), updatedDish.getBranchID(), Arrays.asList(updatedDish.getIngredients()),Arrays.asList(updatedDish.getToppings()), updatedDish.getImage(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice()});
             sendToServer(message);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -232,6 +239,11 @@ public class SimpleClient extends AbstractClient {
 
     public void sendAddOrder(List<Integer> dishIds, List<String> adaptaions, String orderType, int selectedBranch, Date orderDate, Double finalPrice, String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv) throws IOException {
         Message message = new Message("add order", new Object[]{dishIds, adaptaions, orderType, selectedBranch, orderDate, finalPrice, name, address, phone, userId, cardNumber, month, year, cvv});
+        sendToServer(message);
+    }
+
+    public void sendCancelOrder(int orderId, String phoneNum) throws IOException {
+        Message message = new Message("cancel order", new Object[]{orderId,phoneNum});
         sendToServer(message);
     }
 

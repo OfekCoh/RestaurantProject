@@ -53,8 +53,9 @@ public class PrimaryController {
     }
 
     @FXML
-    void switchToCancelation(ActionEvent event) {
-
+    void switchToCancelation(ActionEvent event) throws Exception {
+        OrderSelectionType.setSelectedMode("cancel");
+        App.setRoot("orderSelectionType");
     }
 
 
@@ -95,7 +96,9 @@ public class PrimaryController {
 
     @FXML
     void switchToMenuDelivery(ActionEvent event) throws IOException {
-            App.setRoot("orderSelectionType");
+        //Order
+        OrderSelectionType.setSelectedMode("order");
+        App.setRoot("orderSelectionType");
     }
 
     @FXML
