@@ -221,10 +221,11 @@ public class DatabaseServer {
         }
     }
 
+
     public static List<RestaurantBranch> getAllBranches(Session session) throws Exception {
         CriteriaBuilder builder = session.getCriteriaBuilder();
         CriteriaQuery<RestaurantBranch> query = builder.createQuery(RestaurantBranch.class);
-        Root<RestaurantBranch> root = query.from(RestaurantBranch.class);
+        Root<RestaurantBranch> root = query.from(RestaurantBranch.class)
 
         query.select(root).distinct(true); // Ensure distinct branches
 
