@@ -242,14 +242,8 @@ public class OrderTableController {
         // or ask to change to a different branch with same parameters
 
         // if its a worker (host) adding the branch it shouldnt go to payment.
-
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/il/cshaifasweng/OCSFMediatorExample/client/buyerForm.fxml"));
-        Parent root = loader.load(); // calls initialize
-
-        BuyerDetailsFormController controller = loader.getController(); // Get the controller and set caller type
-        controller.setCallerType("orderTable");  // Pass "orderTable"
-
-        App.getRootLayout().setCenter(root);
+        BuyerDetailsFormController.setCallerType("orderTable");
+        App.setRoot("buyerForm");
     }
 
 

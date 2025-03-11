@@ -5,12 +5,13 @@ import javafx.scene.control.*;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
 public class BuyerDetailsFormController {
 
-    private String callerType = "default caller"; // who called me.
+    private static String callerType = "default caller"; // who called me.
 
     @FXML
     private TextField nameField;
@@ -56,7 +57,7 @@ public class BuyerDetailsFormController {
         monthCombo.setValue(currentMonth);
         yearCombo.setValue(currentYear);
 
-//        totalCostLabel.setText(String.format("Total Cost: $%.2f", OrderManage.getFinalPrice()));  // moved to the new UI function
+        updateUIBasedOnCallerType(); // change the lables as you wish
     }
 
     @FXML
@@ -164,7 +165,7 @@ public class BuyerDetailsFormController {
             case "complaint":
                 System.out.println("got here from complaint");
                 App.setRoot("primary");
-                // will be added by roy
+                SimpleClient.getClient().sendComplaint(ComplaintController.getComplainText(), new Date(), name, address, phone, userID, cardNumber, month, year, cvv);
                 break;
 
             default:
@@ -196,9 +197,9 @@ public class BuyerDetailsFormController {
     }
 
     // will be called from the caller window
-    public void setCallerType(String callerType) {
-        this.callerType = callerType;
-        updateUIBasedOnCallerType(); // change the lables as you wish
+    public static void setCallerType(String callerType) {
+        BuyerDetailsFormController.callerType = callerType;
+
     }
 
     public void updateUIBasedOnCallerType() {

@@ -1,5 +1,6 @@
 package il.cshaifasweng.OCSFMediatorExample.client;
 
+import il.cshaifasweng.OCSFMediatorExample.client.Events.BranchEvent;
 import il.cshaifasweng.OCSFMediatorExample.entities.BranchEnt;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -12,8 +13,6 @@ import org.greenrobot.eventbus.Subscribe;
 
 import java.io.IOException;
 import java.util.List;
-
-import static il.cshaifasweng.OCSFMediatorExample.client.DishSelectionController.setSelectedBranchName;
 
 public class BranchSelectionController {
 

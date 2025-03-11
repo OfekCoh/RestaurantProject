@@ -6,6 +6,8 @@ package il.cshaifasweng.OCSFMediatorExample.client;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -33,8 +35,12 @@ public class ComplaintController {
     @FXML
     void submitComplaint(ActionEvent event) throws IOException {
         if(!complaintText.getText().isEmpty()){
-            BuyerDetailsFormController.setPreviousFXML("complaint");
             ComplaintController.complaint = complaintText.getText();
+
+
+            // move to buyers form
+            // if its a worker (host) adding the branch it shouldnt go to payment.
+            BuyerDetailsFormController.setCallerType("complaint");
             App.setRoot("buyerForm");
         }
 

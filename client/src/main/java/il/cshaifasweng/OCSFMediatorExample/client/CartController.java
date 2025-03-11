@@ -122,14 +122,9 @@ public class CartController {
                 System.out.println("FinalPrice: " + OrderManage.getFinalPrice());
 
                 // Pass to the form who called him, these 5 lines replace App.setRoot("buyerForm")
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/il/cshaifasweng/OCSFMediatorExample/client/buyerForm.fxml"));
-                Parent root = loader.load(); // calls initialize
-
-                BuyerDetailsFormController controller = loader.getController(); // Get the controller and set caller type
-                controller.setCallerType("cart");  // Pass "cart"
-
-                App.getRootLayout().setCenter(root);
-
+                // if its a worker (host) adding the branch it shouldnt go to payment.
+                BuyerDetailsFormController.setCallerType("cart");
+                App.setRoot("buyerForm");
             } else {
                 Alert alert = new Alert(Alert.AlertType.INFORMATION,
                         String.format("Message: %s\n",
