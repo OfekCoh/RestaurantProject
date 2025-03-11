@@ -220,7 +220,8 @@ public class BuyerDetailsFormController {
                 totalCostLabel.setStyle("-fx-font-size: 16; -fx-font-weight: normal;");
                 break;
             case "complaint":
-                totalCostLabel.setVisible(false);
+                totalCostLabel.setText("No charges will be made - this is only for a potential refund.");
+                totalCostLabel.setStyle("-fx-font-size: 16; -fx-font-weight: normal;");
                 break;
             default:
                 break;
