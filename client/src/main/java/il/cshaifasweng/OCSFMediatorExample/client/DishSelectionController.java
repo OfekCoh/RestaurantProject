@@ -75,6 +75,8 @@ public class DishSelectionController {
 
         if ("order".equalsIgnoreCase(selectedMode)) {
             backButton.setText("Back");
+        }else{
+            cartButton.setVisible(false);
         }
         menuLabel.setText("Menu - " + selectedBranchName);
         populateDishGrid();

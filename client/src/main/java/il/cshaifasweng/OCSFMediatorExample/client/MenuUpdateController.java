@@ -36,6 +36,8 @@ public class MenuUpdateController {
     @FXML
     private TableColumn<DishEnt, String> ingredientsColumn;
     @FXML
+    private TableColumn<DishEnt, String> toppingsColumn;
+    @FXML
     private TableColumn<DishEnt, Number> priceColumn;
     @FXML
     private TableColumn<DishEnt, ComboBox<BranchEnt>> branchColumn;
@@ -103,8 +105,9 @@ public class MenuUpdateController {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        menuChangeTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         descriptionColumn.setCellValueFactory(new PropertyValueFactory<>("description"));
@@ -114,6 +117,14 @@ public class MenuUpdateController {
             String joined = (arr == null) ? "" : String.join(", ", arr);
             return new javafx.beans.property.SimpleStringProperty(joined);
         });
+
+        toppingsColumn.setCellValueFactory(cellData -> {
+            String[] arr = cellData.getValue().getToppings();
+            String joined = (arr == null) ? "" : String.join(", ", arr);
+            return new javafx.beans.property.SimpleStringProperty(joined);
+        });
+
+
 
         priceColumn.setCellValueFactory(new PropertyValueFactory<>("price"));
 //        priceColumn.setCellFactory(TextFieldTableCell.forTableColumn(new NumberStringConverter()));

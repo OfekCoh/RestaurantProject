@@ -2,51 +2,69 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="il.cshaifasweng.OCSFMediatorExample.client.MenuUpdateController">
+<AnchorPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="il.cshaifasweng.OCSFMediatorExample.client.MenuUpdateController">
+
    <children>
-      <VBox prefHeight="922.0" prefWidth="928.0" spacing="10.0" AnchorPane.leftAnchor="10" AnchorPane.rightAnchor="10" AnchorPane.topAnchor="10">
-         <children>
-            <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Menu Update - Dishes" />
-            <TableView fx:id="tableView" editable="true">
-               <columns>
-                  <TableColumn fx:id="idColumn" prefWidth="50" text="ID" />
-                  <TableColumn fx:id="nameColumn" prefWidth="100" text="Name" />
-                  <TableColumn fx:id="descriptionColumn" prefWidth="150" text="Description" />
-                  <TableColumn fx:id="ingredientsColumn" prefWidth="150" text="Ingredients" />
-                  <TableColumn fx:id="priceColumn" prefWidth="75" text="Price" />
-                  <TableColumn fx:id="salePriceColumn" prefWidth="75" text="Sale Price" />
-                  <TableColumn fx:id="isSalePriceColumn" prefWidth="75" text="On Sale?" />
-                  <TableColumn fx:id="branchColumn" prefWidth="100" text="Branch" />
-                  <TableColumn fx:id="actionsColumn" prefWidth="150" text="Actions" />
-               </columns>
-            </TableView>
-            <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Pending Menu Changes" />
-            <TableView fx:id="menuChangeTable" editable="false" prefHeight="390.0" prefWidth="927.0">
-               <columns>
-                  <TableColumn fx:id="mcIdColumn" prefWidth="80" text="Change ID" />
-                  <TableColumn fx:id="mcDishIdColumn" prefWidth="80" text="Dish ID" />
-                  <TableColumn fx:id="mcOldPriceColumn" prefWidth="80" text="Old Price" />
-                  <TableColumn fx:id="mcOldIsOnSaleColumn" prefWidth="90" text="Old OnSale?" />
-                  <TableColumn fx:id="mcOldSalePriceColumn" prefWidth="90" text="Old Sale Price" />
-                  <TableColumn fx:id="mcNewPriceColumn" prefWidth="80" text="New Price" />
-                  <TableColumn fx:id="mcNewIsOnSaleColumn" prefWidth="90" text="New OnSale?" />
-                  <TableColumn fx:id="mcNewSalePriceColumn" prefWidth="90" text="New Sale Price" />
-                  <TableColumn fx:id="mcActionsColumn" prefWidth="117.5999755859375" text="Actions" />
-               </columns>
-            </TableView>
-            <HBox alignment="CENTER" spacing="10">
-               <children>
-                  <Button onAction="#handleAddDish" text="Add Dish" />
-                  <Button onAction="#handleBackButton" text="Back" />
-               </children>
-            </HBox>
-         </children>
-      </VBox>
+      <!-- ScrollPane so it can scroll if content is huge -->
+      <ScrollPane fitToHeight="true" fitToWidth="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+
+         <content>
+            <!-- VBox to stack the label, the first table, the second label,
+                 the second table, and the buttons vertically -->
+            <VBox fx:id="rootVBox" spacing="10" style="-fx-padding: 10;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+
+               <!-- Title Label -->
+               <Label fx:id="menuUpdateLabel" text="Menu Update Panel" />
+
+               <!-- First TableView (Dishes).-->
+               <TableView fx:id="tableView" VBox.vgrow="NEVER">
+                  <columns>
+                     <TableColumn fx:id="idColumn" prefWidth="39.2000116109848" text="ID" />
+                     <TableColumn fx:id="nameColumn" prefWidth="120.79999160766602" text="Name" />
+                     <TableColumn fx:id="descriptionColumn" text="Description" />
+                     <TableColumn fx:id="ingredientsColumn" text="Ingredients" />
+                     <TableColumn fx:id="toppingsColumn" text="Toppings" />
+                     <TableColumn fx:id="priceColumn" text="Price" />
+                     <TableColumn fx:id="branchColumn" prefWidth="44.800018310546875" text="Branch" />
+                     <TableColumn fx:id="salePriceColumn" prefWidth="70.4000244140625" text="Sale Price" />
+                     <TableColumn fx:id="isSalePriceColumn" prefWidth="62.4000244140625" text="On Sale?" />
+                     <TableColumn fx:id="actionsColumn" prefWidth="143.199951171875" text="Actions" />
+                  </columns>
+               </TableView>
+
+               <!-- Second Label -->
+               <Label fx:id="menuChangesLabel" text="Menu Changes Panel" />
+
+               <!-- Second TableView (Menu Changes) -->
+               <TableView fx:id="menuChangeTable" VBox.vgrow="NEVER">
+                  <columns>
+                     <TableColumn fx:id="mcIdColumn" text="ID" />
+                     <TableColumn fx:id="mcDishIdColumn" text="Dish ID" />
+                     <TableColumn fx:id="mcOldPriceColumn" text="Old Price" />
+                     <TableColumn fx:id="mcOldIsOnSaleColumn" text="Old On Sale?" />
+                     <TableColumn fx:id="mcOldSalePriceColumn" text="Old Sale Price" />
+                     <TableColumn fx:id="mcNewPriceColumn" text="New Price" />
+                     <TableColumn fx:id="mcNewIsOnSaleColumn" text="New On Sale?" />
+                     <TableColumn fx:id="mcNewSalePriceColumn" text="New Sale Price" />
+                     <TableColumn fx:id="mcActionsColumn" prefWidth="136.80001220703127" text="Actions" />
+                  </columns>
+               </TableView>
+
+               <!-- Buttons row -->
+               <HBox spacing="10">
+                  <Button fx:id="handleAddDishButton" onAction="#handleAddDish" text="Add Dish" />
+                  <Button fx:id="handleBackButton" onAction="#handleBackButton" text="Back" />
+               </HBox>
+
+            </VBox>
+         </content>
+      </ScrollPane>
    </children>
 </AnchorPane>

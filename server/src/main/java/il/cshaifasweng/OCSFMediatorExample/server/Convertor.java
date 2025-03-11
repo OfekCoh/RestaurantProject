@@ -1,9 +1,6 @@
 package il.cshaifasweng.OCSFMediatorExample.server;
 
-import il.cshaifasweng.OCSFMediatorExample.entities.BranchEnt;
-import il.cshaifasweng.OCSFMediatorExample.entities.DishEnt;
-import il.cshaifasweng.OCSFMediatorExample.entities.MenuChangeEnt;
-import il.cshaifasweng.OCSFMediatorExample.entities.TableEnt;
+import il.cshaifasweng.OCSFMediatorExample.entities.*;
 import org.hibernate.mapping.Table;
 
 import java.util.ArrayList;
@@ -17,8 +14,16 @@ public class Convertor {
                 .map(dish -> {
                     // Pull out the List<String> first
                     List<String> ingredients = dish.getIngredients();
+                    List<String> toppings = dish.getToppings();
+
                     // Convert it to String[]
                     String[] ingredientsArr = ingredients.toArray(new String[ingredients.size()]);
+                    String[] toppingsArr;
+                    if(!toppings.isEmpty()) {
+                        toppingsArr = toppings.toArray(new String[toppings.size()]);
+                    }else{
+                        toppingsArr = new String[0];
+                    }
 
                     // Now create the DishEnt
                     return new DishEnt(
@@ -26,6 +31,7 @@ public class Convertor {
                             dish.getName(),
                             dish.getDescription(),
                             ingredientsArr,
+                            toppingsArr,
                             dish.getPrice(),
                             dish.getBranchID(),
                             dish.getImage(),
@@ -81,6 +87,7 @@ public class Convertor {
         );
     }
 
+
     public static List<BranchEnt> convertToBranchEntList(List<RestaurantBranch> branches) {
         if (branches == null) return null;
         return branches.stream()
@@ -104,6 +111,21 @@ public class Convertor {
                             menuChange.getNewSalePrice()
                     );
                 })
+                .collect(Collectors.toList());
+    }
+    /**
+     * Convert list of Complaints -> list of ComplaintEnt
+     */
+    public static ComplaintEnt convertToComplaintEnt(Complaint complaint) {
+        if (complaint == null) return null;
+        System.out.println("Converting Complaint: " + complaint.getComplaintId());
+        return new ComplaintEnt(complaint.getComplaintId(), complaint.getComplaint(), complaint.getDate(), complaint.getBuyerDetails().getName(), complaint.getStatus());
+
+    }
+    public static List<ComplaintEnt> convertToComplaintEntList(List<Complaint> complaintsList) {
+        if (complaintsList == null) return null;
+        return complaintsList.stream()
+                .map(Convertor::convertToComplaintEnt)
                 .collect(Collectors.toList());
     }
 

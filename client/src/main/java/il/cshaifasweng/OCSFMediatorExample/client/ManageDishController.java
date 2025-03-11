@@ -41,6 +41,15 @@ public class ManageDishController {
     @FXML
     private ListView<String> ingredientListView;
     @FXML
+    private TextField toppingField;
+    @FXML
+    private Button addToppingButton;
+    @FXML
+    private Button removeToppingButton;
+    @FXML
+    private ListView<String> toppingListView;
+
+    @FXML
     private TextField imageField;        // Holds the base64 string (optional)
     @FXML
     private Button chooseImageButton;    // Button to pick an image
@@ -55,6 +64,7 @@ public class ManageDishController {
     private static String selectedMode;
     private List<BranchEnt> branchList = new ArrayList<>();
     private List<String> ingredientList = new ArrayList<>();
+    private List<String> toppingsList = new ArrayList<>();
 
     public static void setSelectedDish(DishEnt dish) {
         editingDish = dish;
@@ -92,9 +102,15 @@ public class ManageDishController {
                 nameField.setDisable(true);
                 descriptionField.setDisable(true);
                 branchComboBox.setDisable(true);
+                //Ingredients
                 ingredientField.setDisable(true);
                 addIngredientButton.setDisable(true);
                 removeIngridient.setDisable(true);
+                //Toppings
+                toppingField.setDisable(true);
+                addToppingButton.setDisable(true);
+                removeToppingButton.setDisable(true);
+
                 imageField.setDisable(true);
                 chooseImageButton.setDisable(true);
             }
@@ -115,6 +131,12 @@ public class ManageDishController {
         ingredientListView.getItems().setAll(dish.getIngredients());
         for (String ing : dish.getIngredients()) {
             ingredientList.add(ing);
+        }
+
+        // Load existing ingredients
+        toppingListView.getItems().setAll(dish.getToppings());
+        for (String topping : dish.getToppings()) {
+            toppingsList.add(topping);
         }
 
         // Load image (Base64). Display it in the text field (optional).
@@ -141,6 +163,26 @@ public class ManageDishController {
     }
 
     @FXML
+    private void addTopping() {
+        String topping = toppingField.getText().trim();
+        if (!topping.isEmpty()) {
+            toppingsList.add(topping);
+            toppingListView.getItems().add(topping);
+            toppingField.clear();
+        }
+    }
+
+    @FXML
+    private void removeSelectedTopping() {
+        String selected = toppingListView.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            toppingsList.remove(selected);
+            toppingListView.getItems().remove(selected);
+        }
+    }
+
+
+    @FXML
     private void chooseImage() {
         // Let the user pick a file
         FileChooser fileChooser = new FileChooser();
@@ -163,7 +205,7 @@ public class ManageDishController {
                 Image fxImage = new Image(new ByteArrayInputStream(decodedBytes));
                 imagePreview.setImage(fxImage);
 
-                System.out.println("Image successfully converted to Base64.");
+//                System.out.println("Image successfully converted to Base64.");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -191,11 +233,57 @@ public class ManageDishController {
 
     @FXML
     private void submitDish() throws Exception {
-        // 1) Parse the branch from the combo box
-        if (branchComboBox.getValue() == null) {
-            System.out.println("No branch selected");
+        // --- VALIDATION ---
+        if (nameField.getText().trim().isEmpty()) {
+            showError("Name is required.");
             return;
         }
+        if (descriptionField.getText().trim().isEmpty()) {
+            showError("Description is required.");
+            return;
+        }
+        if (branchComboBox.getValue() == null) {
+            showError("Please select a branch.");
+            return;
+        }
+        if (priceField.getText().trim().isEmpty()) {
+            showError("Price is required.");
+            return;
+        }
+        double parsedPrice;
+        try {
+            parsedPrice = Double.parseDouble(priceField.getText().trim());
+        } catch (NumberFormatException e) {
+            showError("Price must be a valid number.");
+            return;
+        }
+        // Ensure price >= 0
+        if (parsedPrice < 0) {
+            showError("Price cannot be negative.");
+            return;
+        }
+
+        if (ingredientList.isEmpty()) {
+            showError("At least one ingredient is required.");
+            return;
+        }
+
+        // Sale price (optional, but if not empty, must be valid and >= 0)
+        double parsedSalePrice = 0.0;
+        if (!salePriceField.getText().trim().isEmpty()) {
+            try {
+                parsedSalePrice = Double.parseDouble(salePriceField.getText().trim());
+            } catch (NumberFormatException e) {
+                showError("Sale Price must be a valid number (or blank).");
+                return;
+            }
+            if (parsedSalePrice < 0) {
+                showError("Sale Price cannot be negative.");
+                return;
+            }
+        }
+
+        // All required fields are filled & valid, proceed:
         int branchId = Integer.parseInt(branchComboBox.getValue().split(" - ")[0]);
 
         // 2) Build a new DishEnt object
@@ -203,11 +291,12 @@ public class ManageDishController {
                 nameField.getText(),
                 descriptionField.getText(),
                 ingredientList.toArray(new String[0]),
-                Double.parseDouble(priceField.getText()),
+                toppingsList.toArray(new String[0]),
+                parsedPrice,
                 branchId,
                 imageField.getText(),
                 isSalePriceCheckBox.isSelected(),
-                Double.parseDouble(salePriceField.getText())
+                parsedSalePrice
         );
 
         // 3) If editing an existing dish, set the same ID
@@ -220,7 +309,7 @@ public class ManageDishController {
                 if(SimpleClient.ruleID==4){ //CEO - has permission to edit
                     System.out.println("Updating prices for dish: " + updatedDish);
                     SimpleClient.getClient().sendUpdatePriceCommand(editingDish.getId(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice());
-                }else{ //Not CEO - will need to be approved by the ceo. //TODO!
+                }else{ //Not CEO - will need to be approved by the ceo.
                     System.out.println("adding menuChanges for dish"+ editingDish +" After: \n"+updatedDish);
                     SimpleClient.getClient().sendAddMenuChange(editingDish.getId(), editingDish.getPrice(), editingDish.getIsSalePrice(), editingDish.getSalePrice(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice());
                 }
@@ -240,5 +329,10 @@ public class ManageDishController {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void showError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+        alert.showAndWait();
     }
 }

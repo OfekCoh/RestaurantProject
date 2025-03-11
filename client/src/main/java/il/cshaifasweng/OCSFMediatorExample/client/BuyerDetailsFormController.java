@@ -5,6 +5,7 @@ import javafx.scene.control.*;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
@@ -173,7 +174,7 @@ public class BuyerDetailsFormController {
             case "complaint":
                 System.out.println("submitting a complaint");
                 App.setRoot("primary");
-                // will be added by roy
+                SimpleClient.getClient().sendComplaint(ComplaintController.getComplainText(), new Date(), name, address, phone, userID, cardNumber, month, year, cvv);
                 break;
 
             default:

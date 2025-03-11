@@ -1,9 +1,6 @@
 package il.cshaifasweng.OCSFMediatorExample.client;
 
-import il.cshaifasweng.OCSFMediatorExample.client.Events.DishEvent;
-import il.cshaifasweng.OCSFMediatorExample.client.Events.LoginEvent;
-import il.cshaifasweng.OCSFMediatorExample.client.Events.MenuChangeEvent;
-import il.cshaifasweng.OCSFMediatorExample.client.Events.WarningEvent;
+import il.cshaifasweng.OCSFMediatorExample.client.Events.*;
 import il.cshaifasweng.OCSFMediatorExample.entities.*;
 import javafx.application.Platform;
 import org.greenrobot.eventbus.EventBus;
@@ -125,8 +122,15 @@ public class SimpleClient extends AbstractClient {
                     System.out.println("Received orderResponse with " + payload[0] + " ID.");
                     Platform.runLater(() -> {
                         try {
-                            OrderSuccessController.setOrderID((int) payload[0]);
-                            App.setRoot("orderSuccess");
+                            OrderStatusController.setType((String) payload[0]);
+                            OrderStatusController.setOrderID((int) payload[1]);
+                            if(((String) payload[0]).equalsIgnoreCase("cancel"))
+                            {
+                                OrderStatusController.setRefundAmount((double) payload[2]);
+                            }else{
+                                OrderStatusController.setRefundAmount(0);
+                            }
+                            App.setRoot("orderStatus");
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -134,12 +138,22 @@ public class SimpleClient extends AbstractClient {
                     break;
                 }
 
+                case "complaints response": {
+                    List<ComplaintEnt> complaints = (List<ComplaintEnt>) payload[0];
+                    EventBus.getDefault().post(new ComplaintEvent(complaints));
+                    System.out.println("Recieved list of Complaints ");
+                    break;
+                }
+
+
                 // If you want server to respond with a "menuResponse" message, do it here
                 // case "menuResponse": { ... } break;
 
                 default:
                     System.out.println("Client: Unknown command from server: " + command);
                     break;
+
+
             }
         }
         // 2) Otherwise, check if it's a known entity like MenuEnt, Warning, etc.
@@ -195,7 +209,7 @@ public class SimpleClient extends AbstractClient {
     public void sendAddDishCommand(DishEnt updatedDish) {
         System.out.println("Client: Add Dish: " + updatedDish);
         try {
-            Message message = new Message("add dish", new Object[]{updatedDish.getName(), updatedDish.getDescription(), updatedDish.getBranchID(), Arrays.asList(updatedDish.getIngredients()), updatedDish.getImage(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice()});
+            Message message = new Message("add dish", new Object[]{updatedDish.getName(), updatedDish.getDescription(), updatedDish.getBranchID(), Arrays.asList(updatedDish.getIngredients()),Arrays.asList(updatedDish.getToppings()), updatedDish.getImage(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice()});
             sendToServer(message);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -206,7 +220,7 @@ public class SimpleClient extends AbstractClient {
         System.out.println("Client: Update Dish: " + updatedDish);
         try {
             // We'll pack all relevant fields into the payload array
-            Message message = new Message("update dish", new Object[]{updatedDish.getId(), updatedDish.getName(), updatedDish.getDescription(), updatedDish.getBranchID(), Arrays.asList(updatedDish.getIngredients()), updatedDish.getImage(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice()});
+            Message message = new Message("update dish", new Object[]{updatedDish.getId(), updatedDish.getName(), updatedDish.getDescription(), updatedDish.getBranchID(), Arrays.asList(updatedDish.getIngredients()),Arrays.asList(updatedDish.getToppings()), updatedDish.getImage(), updatedDish.getPrice(), updatedDish.getIsSalePrice(), updatedDish.getSalePrice()});
             sendToServer(message);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -228,6 +242,11 @@ public class SimpleClient extends AbstractClient {
         sendToServer(message);
     }
 
+    public void sendCancelOrder(int orderId, String phoneNum) throws IOException {
+        Message message = new Message("cancel order", new Object[]{orderId,phoneNum});
+        sendToServer(message);
+    }
+
 //    public void sendAddTableOrder(String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv) throws IOException {
 //        Message message = new Message("add table order", new Object[]{name, address, phone, userId, cardNumber, month, year, cvv});
 //        sendToServer(message);
@@ -243,12 +262,25 @@ public class SimpleClient extends AbstractClient {
         sendToServer(message);
     }
 
-
+    // need to add buyer details?
+    public void sendComplaint(String complaintText, Date date, String name, String address, String phone, String userID, String cardNumber, Integer month,Integer  year, String cvv) throws IOException {
+        Message message = new Message("complaint", new Object[]{complaintText, date, name, address, phone, userID, cardNumber, month, year, cvv});
+        sendToServer(message);
+    }
     public static SimpleClient getClient() {
         if (client == null) {
             client = new SimpleClient(ip, port);
         }
         return client;
+    }
+
+    public void sendGetComplaints() throws Exception {
+        Message message = new Message("get complaints", new Object[]{});
+        sendToServer(message);
+    }
+    public void sendHandleComplaint(int complaintID, int refund) throws Exception {
+        Message message = new Message("handle complaint", new Object[]{complaintID, refund});
+        sendToServer(message);
     }
 
 }

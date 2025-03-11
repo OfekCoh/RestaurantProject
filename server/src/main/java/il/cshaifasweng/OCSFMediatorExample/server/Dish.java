@@ -20,6 +20,10 @@ public class Dish {
     @Column(name = "ingredients")
     private List<String> ingredients;
 
+    @ElementCollection
+    @Column(name = "toppings")
+    private List<String> toppings;
+
     @Lob
     @Column(name = "image", columnDefinition = "LONGTEXT") // Stores Base64 images properly
     private String image;
@@ -30,24 +34,26 @@ public class Dish {
     public Dish() {
     }
 
-    public Dish(double price, String name, String description, int branchID, List<String> ingredients, String image) {
+    public Dish(double price, String name, String description, int branchID, List<String> ingredients,List<String> toppings, String image) {
         this.price = price;
         this.name = name;
         this.description = description;
         this.branchID = branchID;
         this.ingredients = ingredients;
+        this.toppings = toppings; //new ArrayList<>(); possible as well
         this.image = image;
         this.salePrice = 0;
         this.isSalePrice = false;
     }
 
 
-    public Dish(double price, String name, String description, int branchID, List<String> ingredients, String image, double salePrice, boolean isSalePrice) {
+    public Dish(double price, String name, String description, int branchID, List<String> ingredients,List<String> toppings, String image, double salePrice, boolean isSalePrice) {
         this.price = price;
         this.name = name;
         this.description = description;
         this.branchID = branchID;
         this.ingredients = ingredients;
+        this.toppings = toppings;
         this.image = image;
         this.salePrice = salePrice;
         this.isSalePrice = isSalePrice;
@@ -95,6 +101,14 @@ public class Dish {
 
     public void setIngredients(List<String> ingredients) {
         this.ingredients = ingredients;
+    }
+
+    public List<String> getToppings() {
+        return toppings;
+    }
+
+    public void setToppings(List<String> toppings) {
+        this.toppings = toppings;
     }
 
     public String getImage() {

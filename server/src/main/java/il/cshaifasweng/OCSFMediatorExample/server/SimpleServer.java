@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.SubscribedClient;
 
@@ -22,6 +25,7 @@ public class SimpleServer extends AbstractServer {
         DatabaseServer.password = databasePassword;
         // create the database
         databaseServer = new DatabaseServer(databasePassword);
+        startComplaintChecker();
     }
 
     @Override
@@ -280,17 +284,18 @@ public class SimpleServer extends AbstractServer {
                 }
 
                 case "add dish": {
-                    if (payload.length == 8) {
+                    if (payload.length == 9) {
                         String name = (String) payload[0];
                         String description = (String) payload[1];
                         int branchID = (int) payload[2];
                         List<String> ingredients = (List<String>) payload[3];
-                        String image = (String) payload[4];
-                        double price = (double) payload[5];
-                        boolean isSalePrice = (boolean) payload[6];
-                        double salePrice = (double) payload[7];
+                        List<String> toppings = (List<String>) payload[4];
+                        String image = (String) payload[5];
+                        double price = (double) payload[6];
+                        boolean isSalePrice = (boolean) payload[7];
+                        double salePrice = (double) payload[8];
 
-                        Dish newDish = new Dish(price, name, description, branchID, ingredients, image, salePrice, isSalePrice);
+                        Dish newDish = new Dish(price, name, description, branchID, ingredients,toppings, image, salePrice, isSalePrice);
 
                         try {
                             Boolean result = DatabaseServer.addDish(newDish);
@@ -332,18 +337,19 @@ public class SimpleServer extends AbstractServer {
                     // [int dishId, String name, String description,
                     //  int branchID, List<String> ingredients, String image, int price]
 
-                    if (payload.length == 9) {
+                    if (payload.length == 10) {
                         int dishId = (int) payload[0];
                         String name = (String) payload[1];
                         String desc = (String) payload[2];
                         int branchID = (int) payload[3];
                         List<String> ingr = (List<String>) payload[4];
-                        String image = (String) payload[5];
-                        double price = (double) payload[6];
-                        boolean isSalePrice = (boolean) payload[7];
-                        double salePrice = (double) payload[8];
+                        List<String> toppings = (List<String>) payload[5];
+                        String image = (String) payload[6];
+                        double price = (double) payload[7];
+                        boolean isSalePrice = (boolean) payload[8];
+                        double salePrice = (double) payload[9];
 
-                        Dish dishToUpdate = new Dish(price, name, desc, branchID, ingr, image, salePrice, isSalePrice);
+                        Dish dishToUpdate = new Dish(price, name, desc, branchID, ingr,toppings, image, salePrice, isSalePrice);
                         dishToUpdate.setId(dishId);
 
                         // Wrap the updateDish call in a broad try/catch
@@ -388,9 +394,9 @@ public class SimpleServer extends AbstractServer {
                     break;
                 }
 
-                case "add order":{
+                case "add order": {
                     if (payload.length == 14) {
-                        try{
+                        try {
                             //List<Integer> dishIds, List<String> adaptaions, String orderType, int selectedBranch, Date orderDate, Double finalPrice, String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv
                             List<Integer> dishIds = (List<Integer>) payload[0];
                             List<String> adaptations = (List<String>) payload[1];
@@ -416,7 +422,7 @@ public class SimpleServer extends AbstractServer {
                             BuyerDetails buyerDetails = new BuyerDetails(name, address, phone, userId, cardNum, cardMonth, cardYear, cvv);
 
                             // Create a new Order using the existing constructor
-                            Order newOrder = new Order(selectedBranch, isDelivery, dishIds, adaptations, buyerDetails,orderDate,finalPrice);
+                            Order newOrder = new Order(selectedBranch, isDelivery, dishIds, adaptations, buyerDetails, orderDate, finalPrice);
                             // Set the additional order information
 
 
@@ -426,7 +432,7 @@ public class SimpleServer extends AbstractServer {
 //                                Warning successMsg = new Warning("Order added successfully!");
 //                                client.sendToClient(successMsg);
 
-                                Message response = new Message("orderResponse", new Object[]{orderId});
+                                Message response = new Message("orderResponse", new Object[]{"add", orderId});
                                 client.sendToClient(response);
                             } else {
                                 Warning failMsg = new Warning("Failed to add order!");
@@ -436,6 +442,38 @@ public class SimpleServer extends AbstractServer {
                         } catch (Exception e) {
                             try {
                                 Warning failMsg = new Warning("Error, Failed to add order: " + e.getMessage());
+                                client.sendToClient(failMsg);
+                            } catch (IOException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    break;
+                }
+                case "cancel order": {
+                    if (payload.length == 2) {
+                        try {
+                            int orderId = (int) payload[0];
+                            String phoneNumber = (String) payload[1];
+
+
+                            // cancel the order in the database (update status, we don't want to remove it from the database completely).
+                            Object[] results = DatabaseServer.cancelOrder(orderId, phoneNumber);
+                            if ((int) results[0] != -1) {
+//                                Warning successMsg = new Warning("Order canceled successfully!");
+//                                client.sendToClient(successMsg);
+
+                                Message response = new Message("orderResponse", new Object[]{"cancel", results[0],results[1]});
+                                client.sendToClient(response);
+                            } else {
+                                Warning failMsg = new Warning("Failed to cancel order!");
+                                client.sendToClient(failMsg);
+                            }
+
+                        } catch (Exception e) {
+                            try {
+                                Warning failMsg = new Warning("Error, Failed to cancel order: " + e.getMessage());
                                 client.sendToClient(failMsg);
                             } catch (IOException ex) {
                                 throw new RuntimeException(ex);
@@ -564,6 +602,82 @@ public class SimpleServer extends AbstractServer {
                 }
 
                 // -----------------------------------------------------------
+                // complaints commands
+                // -----------------------------------------------------------
+                case "complaint": {
+                    if (payload.length == 10) {
+                        String complaintText = (String) payload[0];
+                        Date date = (Date) payload[1];
+                        String name = (String) payload[2];
+                        String address = (String) payload[3];
+                        String phone = (String) payload[4];
+                        String userId = (String) payload[5];
+                        String cardNum = (String) payload[6];
+                        int cardMonth = (int) payload[7];
+                        int cardYear = (int) payload[8];
+                        String cvv = (String) payload[9];
+
+                        Complaint newComplaint = new Complaint(complaintText, date, new BuyerDetails(name, address, phone, userId, cardNum, cardMonth, cardYear, cvv));
+                        try {
+                            boolean result = DatabaseServer.addComplaint(newComplaint);
+
+                            if (result) {
+                                Warning successMsg = new Warning("Complaint successfully added!");
+                                client.sendToClient(successMsg);
+
+                                // send new list of complaints to client
+                                sendToAllClients(complaintsResponse());
+
+                            } else {
+                                Warning failMsg = new Warning("Failed to add Complaint!");
+                                client.sendToClient(failMsg);
+                            }
+
+                        } catch (IOException e) {
+                            System.err.println("IOException: " + e.getMessage());
+                            e.printStackTrace();
+                        } catch (Exception e) {
+                            System.err.println("Exception: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    } else {
+                        try {
+                            Warning failMsg = new Warning("Failed to add Complaint!");
+                            client.sendToClient(failMsg);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    break;
+
+                }
+                case "handle complaint":
+                    if(payload.length == 2) {
+                        int complaintId = (int) payload[0];
+                        int refund = (int) payload[1];
+                        DatabaseServer.handleComplaint(complaintId, refund);
+                        // send updated complaints to client
+                        try {
+                            sendToAllClients(complaintsResponse());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    }
+
+                case "get complaints": {
+                    try {
+                        client.sendToClient(complaintsResponse());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                }
+
+
+
+
+                // -----------------------------------------------------------
                 // Unrecognized command
                 // -----------------------------------------------------------
                 default:
@@ -577,7 +691,15 @@ public class SimpleServer extends AbstractServer {
         }
     }
 
-    public void sendToAllClients(String message) {
+    // send complaints to client for complaints handling
+    public Message complaintsResponse() {
+        List<ComplaintEnt> complaints = DatabaseServer.getComplaints();
+        System.out.println("Complaints: " + complaints.size());
+        return new Message("complaints response", new Object[]{complaints});
+    }
+
+    // send message for all the cilents
+    public void sendToAllClients(Message message) {
         try {
             for (SubscribedClient subscribedClient : SubscribersList) {
                 subscribedClient.getClient().sendToClient(message);
@@ -587,4 +709,17 @@ public class SimpleServer extends AbstractServer {
         }
     }
 
+    // check complaints periodically to auto handle complaints older than 24 hours
+    private void startComplaintChecker() {
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        scheduler.scheduleAtFixedRate(() -> {
+            boolean complaintsUpdated = DatabaseServer.autoHandleOldComplaints();
+
+            // Only notify clients if complaints were updated
+            if (complaintsUpdated) {
+                System.out.println("Auto-handled complaints. Notifying clients...");
+
+            }
+        }, 0, 10, TimeUnit.MINUTES);
+    }
 }

@@ -53,22 +53,23 @@ public class PrimaryController {
     }
 
     @FXML
-    void switchToCancelation(ActionEvent event) {
-
+    void switchToCancelation(ActionEvent event) throws Exception {
+        OrderSelectionType.setSelectedMode("cancel");
+        App.setRoot("orderSelectionType");
     }
 
 
     //טיפול בתלונה
     @FXML
-    void switchToComplaint(ActionEvent event) {
-
+    void switchToComplaint(ActionEvent event) throws IOException {
+        App.setRoot("complaint");
     }
 
 
     //טיפול בתלונה
     @FXML
-    void switchToComplaintHandler(ActionEvent event) {
-
+    void switchToComplaintHandler(ActionEvent event) throws IOException {
+        App.setRoot("handleComplaints");
     }
 
     @FXML
@@ -95,7 +96,9 @@ public class PrimaryController {
 
     @FXML
     void switchToMenuDelivery(ActionEvent event) throws IOException {
-            App.setRoot("orderSelectionType");
+        //Order
+        OrderSelectionType.setSelectedMode("order");
+        App.setRoot("orderSelectionType");
     }
 
     @FXML

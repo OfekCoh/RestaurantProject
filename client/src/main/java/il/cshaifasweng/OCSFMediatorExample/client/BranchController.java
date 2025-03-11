@@ -2,17 +2,14 @@ package il.cshaifasweng.OCSFMediatorExample.client;
 
 import java.io.IOException;
 
+import il.cshaifasweng.OCSFMediatorExample.client.Events.BranchEvent;
 import il.cshaifasweng.OCSFMediatorExample.entities.BranchEnt;
-import il.cshaifasweng.OCSFMediatorExample.entities.DishEnt;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.util.converter.NumberStringConverter;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;

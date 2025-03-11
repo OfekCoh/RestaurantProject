@@ -7,6 +7,7 @@ import org.hibernate.cfg.Configuration;
 import org.hibernate.service.ServiceRegistry;
 
 import javax.persistence.criteria.*;
+import java.io.InputStream;
 import java.util.*;
 
 import static il.cshaifasweng.OCSFMediatorExample.server.Convertor.*;
@@ -77,10 +78,10 @@ public class DatabaseServer {
          */
 
         // Chain-wide dishes (Branch ID 0)
-        Dish dish1 = new Dish(15.99, "French Fries", "Crispy golden fries with a side of ketchup.", 0, Arrays.asList("Potatoes", "Salt", "Oil"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=", 5.99, true);
-        Dish dish2 = new Dish(12, "Garlic Bread", "Toasted bread with garlic and butter.", 0, Arrays.asList("Bread", "Butter", "Garlic"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
-        Dish dish3 = new Dish(20, "Spaghetti Bolognese", "Traditional Italian pasta with meat sauce.", 0, Arrays.asList("Pasta", "Ground Beef", "Tomato Sauce", "Parmesan"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
-        Dish dish4 = new Dish(18, "Greek Salad", "Fresh vegetables with feta cheese and olives.", 0, Arrays.asList("Lettuce", "Tomatoes", "Feta Cheese", "Olives"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
+        Dish dish1 = new Dish(15.99, "French Fries", "Crispy golden fries with a side of ketchup.", 0, Arrays.asList("Potatoes", "Salt", "Oil"),new ArrayList<>(), encodeImageToBase64("frenchFries"), 5.99, true);
+        Dish dish2 = new Dish(12, "Garlic Bread", "Toasted bread with garlic and butter.", 0, Arrays.asList("Bread", "Butter", "Garlic"), Arrays.asList("Cheese"), encodeImageToBase64("garlicBread"));
+        Dish dish3 = new Dish(20, "Spaghetti Bolognese", "Traditional Italian pasta with meat sauce.", 0, Arrays.asList("Pasta", "Ground Beef", "Tomato Sauce", "Parmesan"), Arrays.asList("Olive Oil"), encodeImageToBase64("spaghettiBolognese"));
+        Dish dish4 = new Dish(18, "Greek Salad", "Fresh vegetables with feta cheese and olives.", 0, Arrays.asList("Lettuce", "Tomatoes", "Feta Cheese", "Olives"), Arrays.asList("Mozerella Cheese"), encodeImageToBase64("greekSalad"));
 
         session.save(dish1);
         session.save(dish2);
@@ -89,9 +90,9 @@ public class DatabaseServer {
         session.flush();
 
         // Branch-specific dishes (Branch ID 1)
-        Dish dish5 = new Dish(25, "Margherita Pizza", "Classic Italian pizza with fresh tomatoes and basil.", 1, Arrays.asList("Tomato", "Mozzarella", "Basil"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
-        Dish dish6 = new Dish(30, "Caesar Salad", "Crispy romaine lettuce with Caesar dressing and parmesan.", 1, Arrays.asList("Lettuce", "Croutons", "Parmesan", "Caesar Dressing"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
-        Dish dish7 = new Dish(28, "Grilled Salmon", "Freshly grilled salmon with lemon butter sauce.", 1, Arrays.asList("Salmon", "Lemon", "Butter", "Garlic"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
+        Dish dish5 = new Dish(25, "Margherita Pizza", "Classic Italian pizza with fresh tomatoes and basil.", 1, Arrays.asList("Tomato", "Mozzarella", "Basil"),Arrays.asList("Olives", "Mushrooms"), encodeImageToBase64("pizza"));
+        Dish dish6 = new Dish(30, "Caesar Salad", "Crispy romaine lettuce with Caesar dressing and parmesan.", 1, Arrays.asList("Lettuce", "Croutons", "Parmesan", "Caesar Dressing"), new ArrayList<>(), encodeImageToBase64("caesarSalad"));
+        Dish dish7 = new Dish(28, "Grilled Salmon", "Freshly grilled salmon with lemon butter sauce.", 1, Arrays.asList("Salmon", "Lemon", "Butter", "Garlic"), new ArrayList<>(), encodeImageToBase64("grilledSalmon"));
 
         session.save(dish5);
         session.save(dish6);
@@ -99,9 +100,9 @@ public class DatabaseServer {
         session.flush();
 
         // Branch-specific dishes (Branch ID 2)
-        Dish dish8 = new Dish(22, "BBQ Chicken Wings", "Spicy and tangy chicken wings with BBQ sauce.", 2, Arrays.asList("Chicken", "BBQ Sauce", "Spices"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
-        Dish dish9 = new Dish(10, "Mozzarella Sticks", "Fried mozzarella sticks with marinara sauce.", 2, Arrays.asList("Mozzarella", "Breadcrumbs", "Marinara Sauce"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
-        Dish dish10 = new Dish(35, "Ribeye Steak", "Juicy ribeye steak served with mashed potatoes.", 2, Arrays.asList("Beef", "Potatoes", "Butter"), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAm8B8E9zX9EAAAAASUVORK5CYII=");
+        Dish dish8 = new Dish(22, "BBQ Chicken Wings", "Spicy and tangy chicken wings with BBQ sauce.", 2, Arrays.asList("Chicken", "BBQ Sauce", "Spices"), new ArrayList<>(), encodeImageToBase64("bbqChickenWings"));
+        Dish dish9 = new Dish(10, "Mozzarella Sticks", "Fried mozzarella sticks with marinara sauce.", 2, Arrays.asList("Mozzarella", "Breadcrumbs", "Marinara Sauce"), new ArrayList<>(), encodeImageToBase64("mozzarellaSticks"));
+        Dish dish10 = new Dish(35, "Ribeye Steak", "Juicy ribeye steak served with mashed potatoes.", 2, Arrays.asList("Beef", "Potatoes", "Butter"), new ArrayList<>(), encodeImageToBase64("ribeyeSteak"));
 
         session.save(dish8);
         session.save(dish9);
@@ -180,10 +181,51 @@ public class DatabaseServer {
 
     }
 
+    public static boolean addComplaint(Complaint complaint) {
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            session.save(complaint);
+
+            if (session.contains(complaint)) { //Check if successfully added
+                transaction.commit();
+                return true;
+            } else {
+                transaction.rollback();
+                System.err.println("Failed to insert complaint: " + complaint);
+                return false;
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to add complaint: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
+
+    /**
+     * This function encodes images to base64 for the database creation, for starter images
+     *
+     * @param name - the file name in the starterImages directory
+     * @return returns base64 of an image, so it can be loaded into the database.
+     */
+    public static String encodeImageToBase64(String name) throws Exception {
+
+        try (InputStream is = DatabaseServer.class.getResourceAsStream("./starterImages/" + name + ".jpg")) {
+            byte[] fileContent = is.readAllBytes();
+            String base64 = Base64.getEncoder().encodeToString(fileContent);
+            return base64;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
     public static List<RestaurantBranch> getAllBranches(Session session) throws Exception {
         CriteriaBuilder builder = session.getCriteriaBuilder();
         CriteriaQuery<RestaurantBranch> query = builder.createQuery(RestaurantBranch.class);
-        Root<RestaurantBranch> root = query.from(RestaurantBranch.class);
+        Root<RestaurantBranch> root = query.from(RestaurantBranch.class)
 
         query.select(root).distinct(true); // Ensure distinct branches
 
@@ -209,6 +251,28 @@ public class DatabaseServer {
         return menuChanges;
     }
 
+    public static List<Complaint> getAllComplaints(Session session) throws Exception {
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<Complaint> query = builder.createQuery(Complaint.class);
+        Root<Complaint> root = query.from(Complaint.class);
+
+        query.select(root).distinct(true); // Ensure distinct branches
+
+        List<Complaint> complaintsList = session.createQuery(query).getResultList();
+
+        return complaintsList;
+    }
+
+    public static List<ComplaintEnt> getComplaints() {
+        try (Session session = getSessionFactory().openSession()) {
+            List<Complaint> complaintsList = getAllComplaints(session);
+            return Convertor.convertToComplaintEntList(complaintsList);
+        } catch (Exception e) {
+            System.err.println("Error fetching complaints: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
     public static List<BranchEnt> getBranches() {
         try (Session session = getSessionFactory().openSession()) {
             List<RestaurantBranch> allBranches = getAllBranches(session);
@@ -275,7 +339,7 @@ public class DatabaseServer {
     }
 
     public static int addOrder(Order newOrder) {
-        int orderId=-1;
+        int orderId = -1;
         try (Session session = getSessionFactory().openSession()) {
             Transaction transaction = session.beginTransaction();
 
@@ -293,6 +357,69 @@ public class DatabaseServer {
             System.err.println("Failed to add order: " + e.getMessage());
             e.printStackTrace();
             return orderId;
+        }
+    }
+
+    public static Object[] cancelOrder(int orderId, String phoneNumber) {
+        int newStatus = -1;
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            Order order = session.get(Order.class, orderId);
+            if (order == null) {
+                return new Object[]{newStatus};
+            }
+
+            if (order.getStatus() != 0) {
+                //only if the status is pending we can cancel it, if it is other status, its either completed or already canceled
+                return new Object[]{newStatus};
+            }
+
+            BuyerDetails details = order.getBuyerDetails();
+            //Check we got the same phone number
+            if (details == null || !details.getPhone().equals(phoneNumber)) {
+//                System.err.println("Phone mismatch for Order " + orderId + ". Provided=" + phoneNumber
+//                        + ", Actual=" + (details != null ? details.getPhone() : "null"));
+                return new Object[]{newStatus};
+            }
+            // Calculate hours difference from now to the order’s scheduled time
+            long nowMillis = System.currentTimeMillis();
+            long orderMillis = order.getOrderDate().getTime();
+            long diffMillis = orderMillis - nowMillis;
+
+            // the orderDate already passed, immediately return -1
+            if (diffMillis <= 0) {
+                // The scheduled date/time already passed; cannot cancel for a refund
+                transaction.rollback();
+                return new Object[]{newStatus};
+            }
+
+            // Convert difference in milliseconds to hours (truncating down)
+            long diffHours = diffMillis / (1000 * 60 * 60);
+            System.out.println("Now Mills: " + nowMillis);
+            System.out.println("Order Mills: " + orderMillis);
+            System.out.println("diffMillis: " + diffMillis);
+            System.out.println("Diff hours: " + diffHours);
+            double priceRefund = order.getFinalPrice();
+            if (diffHours > 3) {
+                newStatus = 1;  // Full Refund
+            } else if (diffHours >= 1) {
+                newStatus = 2;  // Partial Refund
+                priceRefund = priceRefund * 0.5;
+            } else {
+                newStatus = 3;  // No Refund
+                priceRefund = 0;
+            }
+
+            // 6) Update the order’s status
+            order.setStatus(newStatus);
+            session.update(order);
+            transaction.commit();
+            return new Object[]{newStatus, priceRefund};
+        } catch (Exception e) {
+            System.err.println("Failed to cancel order: " + e.getMessage());
+            e.printStackTrace();
+            return new Object[]{newStatus};
         }
     }
 
@@ -356,6 +483,7 @@ public class DatabaseServer {
             existingDish.setDescription(updatedDish.getDescription());
             existingDish.setBranchID(updatedDish.getBranchID());
             existingDish.setIngredients(updatedDish.getIngredients());
+            existingDish.setToppings(updatedDish.getToppings());
             existingDish.setImage(updatedDish.getImage());
             existingDish.setPrice(updatedDish.getPrice());
             existingDish.setSalePrice(updatedDish.getSalePrice());
@@ -551,8 +679,69 @@ public class DatabaseServer {
             e.printStackTrace();
         }
     }
+    public static void handleComplaint(int complaintId, int refund) {
+        Transaction transaction = null;
+        try (Session session = getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
 
+            // Retrieve the existing complaint
+            Complaint existingComplaint = session.get(Complaint.class, complaintId);
+            if (existingComplaint == null) {
+                System.out.println("Complaint with ID " + complaintId + " does not exist.");
 
+            }
+
+            // Update the status and refund fields
+            existingComplaint.setStatus(1);
+            existingComplaint.setRefund(refund); // Assuming 'refund' exists in Complaint entity
+
+            // Persist the update
+            session.update(existingComplaint);
+            transaction.commit();
+            System.out.println("Complaint with ID " + complaintId + " handled, refunded amount: " + refund);
+
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
+        }
+    }
+
+    // auto handle old complaints
+    public static boolean autoHandleOldComplaints() {
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            // Get current time minus 24 hours
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.HOUR, -24);
+            Date twentyFourHoursAgo = cal.getTime();
+
+            // Find complaints older than 24 hours with status 0 (waiting)
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaUpdate<Complaint> updateQuery = builder.createCriteriaUpdate(Complaint.class);
+            Root<Complaint> root = updateQuery.from(Complaint.class);
+
+            updateQuery.set(root.get("status"), 2); // Change status to 2
+            updateQuery.where(
+                    builder.equal(root.get("status"), 0),
+                    builder.lessThan(root.get("date"), twentyFourHoursAgo)
+            );
+
+            int updatedRows = session.createQuery(updateQuery).executeUpdate();
+            transaction.commit();
+
+            if (updatedRows > 0) {
+                System.out.println("Updated " + updatedRows + " complaints to status 2 (auto-handled).");
+                return true;  //  Returns `true` if complaints were updated
+            }
+        } catch (Exception e) {
+            System.err.println("Error auto-handling old complaints: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false; // Returns `false` if no complaints were updated
+    }
 //    private static <T> List<T> getAllEntities(Class<T> entityClass) throws Exception {
 //        CriteriaBuilder builder = session.getCriteriaBuilder();
 //        CriteriaQuery<T> query = builder.createQuery(entityClass);
