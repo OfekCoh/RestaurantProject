@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane prefHeight="820.0" prefWidth="426.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="il.cshaifasweng.OCSFMediatorExample.client.ManageDishController">
+
+    <children>
+        <!--
+            Anchor the ScrollPane so it fills the whole window.
+            (If you're using Scene Builder, you can set these anchors
+            in the Layout pane.)
+        -->
+        <ScrollPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <content>
+                <!-- Main container for form fields -->
+                <VBox prefHeight="830.0" prefWidth="405.0" spacing="10" style="-fx-padding: 20;">
+                    <Label fx:id="titleDish" style="-fx-font-size: 20;" text="Add/Edit Dish" />
+
+                    <!-- Dish basic info -->
+                    <HBox spacing="10">
+                        <Label prefHeight="18.0" prefWidth="63.0" text="Name:" />
+                        <TextField fx:id="nameField" />
+                    </HBox>
+
+                    <HBox spacing="10">
+                        <Label text="Description:" />
+                        <TextField fx:id="descriptionField" />
+                    </HBox>
+
+                    <HBox spacing="10">
+                        <Label prefHeight="18.0" prefWidth="62.0" text="Branch:" />
+                        <ComboBox fx:id="branchComboBox" />
+                    </HBox>
+
+                    <HBox spacing="10">
+                        <Label prefHeight="18.0" prefWidth="59.0" text="Price:" />
+                        <TextField fx:id="priceField" />
+                    </HBox>
+
+                    <HBox spacing="10">
+                        <Label prefHeight="18.0" prefWidth="59.0" text="Sale Price:" />
+                        <TextField fx:id="salePriceField" />
+                        <CheckBox fx:id="isSalePriceCheckBox" text="Is on Sale?" />
+                    </HBox>
+
+                    <!-- Ingredients (Required) -->
+                    <Label text="Ingredients:" />
+                    <HBox spacing="5">
+                        <TextField fx:id="ingredientField" promptText="Enter ingredient" />
+                        <Button fx:id="addIngredientButton" onAction="#addIngredient" text="Add" />
+                        <Button fx:id="removeIngridient" onAction="#removeSelectedIngredient" text="Remove" />
+                    </HBox>
+                    <ListView fx:id="ingredientListView" prefHeight="100" />
+
+                    <!-- Toppings (Optional) -->
+                    <Label text="Toppings (Optional):" />
+                    <HBox spacing="5">
+                        <TextField fx:id="toppingField" promptText="Enter topping" />
+                        <Button fx:id="addToppingButton" onAction="#addTopping" text="Add" />
+                        <Button fx:id="removeToppingButton" onAction="#removeSelectedTopping" text="Remove" />
+                    </HBox>
+                    <ListView fx:id="toppingListView" prefHeight="100" />
+
+                    <!-- Image selection (Optional) -->
+                    <Label text="Image (Base64 or choose file):" />
+                    <HBox spacing="5">
+                        <TextField fx:id="imageField" promptText="Base64 String" />
+                        <Button fx:id="chooseImageButton" onAction="#chooseImage" text="Choose..." />
+                    </HBox>
+                    <HBox alignment="CENTER">
+                        <ImageView fx:id="imagePreview" fitHeight="120" fitWidth="120" preserveRatio="true" />
+                    </HBox>
+
+                    <!-- Buttons -->
+                    <HBox alignment="CENTER" spacing="20">
+                        <Button onAction="#submitDish" text="Submit" />
+                        <Button onAction="#handleBackButton" text="Back" />
+                    </HBox>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </children>
+</AnchorPane>

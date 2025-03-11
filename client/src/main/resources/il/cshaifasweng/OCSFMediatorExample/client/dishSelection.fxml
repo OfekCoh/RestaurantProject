@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  dishSelection.fxml
+  Controller: il.cshaifasweng.OCSFMediatorExample.client.DishSelectionController
+  Layout:
+   - top: HBox with search on left, cart on right
+   - center: ScrollPane containing dishGrid
+   - bottom: "Back" button
+-->
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+
+<BorderPane prefHeight="600" prefWidth="800" style="-fx-background-color: #ffffff;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="il.cshaifasweng.OCSFMediatorExample.client.DishSelectionController">
+
+    <!-- TOP BAR: includes the Menu label, a Region for spacing, search field, cart button -->
+    <top>
+        <HBox alignment="CENTER" spacing="10" style="-fx-padding: 10;">
+            <children>
+                <!-- You can still show the "Menu - X" label on the left if desired -->
+                <Label fx:id="menuLabel" style="-fx-font-size: 18; -fx-font-weight: bold;" text="Menu - Branch" />
+
+                <!-- A region that expands to push the items on the right side of the HBox -->
+                <Region HBox.hgrow="ALWAYS" />
+
+                <!-- The search field aligns to the right but left of the cart -->
+                <TextField fx:id="searchField" promptText="Search..." style="-fx-font-size:14; -fx-pref-width:200;" />
+
+                <!-- Cart button on the far right -->
+                <Button fx:id="cartButton" onAction="#onCartButtonClick" style="-fx-font-size: 14;" text="🛒 (0)" />
+            </children>
+        </HBox>
+    </top>
+
+    <!-- CENTER: ScrollPane with dishGrid inside it -->
+    <center>
+        <ScrollPane fitToWidth="true" style="-fx-padding: 10;">
+            <content>
+                <!-- The GridPane for dishes -->
+                <GridPane fx:id="dishGrid" hgap="20" style="-fx-padding: 10;" vgap="20">
+
+                    <!-- We define 2 columns that can stretch -->
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="200" />
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="200" />
+                    </columnConstraints>
+                </GridPane>
+            </content>
+        </ScrollPane>
+    </center>
+
+    <!-- BOTTOM: The back button, anchored at bottom center or left -->
+    <bottom>
+        <HBox alignment="CENTER" spacing="10" style="-fx-padding: 10;">
+            <children>
+                <Button fx:id="backButton" onAction="#onBackClick" style="-fx-font-size:14;" text="Back" />
+            </children>
+        </HBox>
+    </bottom>
+</BorderPane>

@@ -1,7 +1,7 @@
 package il.cshaifasweng.OCSFMediatorExample.server;
+
 import javax.persistence.*;
 import java.util.List;
-import java.util.ArrayList;
 
 @Entity
 @Table(name = "dishes")
@@ -11,35 +11,63 @@ public class Dish {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    private int price;
+    private double price;
     private String name;
     private String description;
-    private boolean isChainDish;
-    private String ingredients;
-//    private String image;
+    private int branchID;
 
-//    private static List<Dish> chainDishes = new ArrayList<>();  // chain-wide dishes
+    @ElementCollection
+    @Column(name = "ingredients")
+    private List<String> ingredients;
 
+    @ElementCollection
+    @Column(name = "toppings")
+    private List<String> toppings;
 
-    public Dish() {}
+    @Lob
+    @Column(name = "image", columnDefinition = "LONGTEXT") // Stores Base64 images properly
+    private String image;
 
-    public Dish(int price, String name, String description, boolean isChainDish, String ingredients) {
+    private double salePrice;
+    private boolean isSalePrice;
+
+    public Dish() {
+    }
+
+    public Dish(double price, String name, String description, int branchID, List<String> ingredients,List<String> toppings, String image) {
         this.price = price;
         this.name = name;
         this.description = description;
-        this.isChainDish = isChainDish;
+        this.branchID = branchID;
         this.ingredients = ingredients;
+        this.toppings = toppings; //new ArrayList<>(); possible as well
+        this.image = image;
+        this.salePrice = 0;
+        this.isSalePrice = false;
+    }
+
+
+    public Dish(double price, String name, String description, int branchID, List<String> ingredients,List<String> toppings, String image, double salePrice, boolean isSalePrice) {
+        this.price = price;
+        this.name = name;
+        this.description = description;
+        this.branchID = branchID;
+        this.ingredients = ingredients;
+        this.toppings = toppings;
+        this.image = image;
+        this.salePrice = salePrice;
+        this.isSalePrice = isSalePrice;
     }
 
     public int getId() {
         return id;
     }
 
-    public int getPrice() {
+    public double getPrice() {
         return price;
     }
 
-    public void setPrice(int price) {
+    public void setPrice(double price) {
         this.price = price;
     }
 
@@ -59,54 +87,71 @@ public class Dish {
         this.description = description;
     }
 
-    public boolean getIsChainDish() {
-        return isChainDish;
+    public int getBranchID() {
+        return branchID;
     }
 
-    public void setIsChainDish(boolean isChainDish) {
-        this.isChainDish = isChainDish;
+    public void setBranchID(int branchID) {
+        this.branchID = branchID;
     }
 
-    public String getingredients() {
+    public List<String> getIngredients() {
         return ingredients;
     }
 
-    public void setingredients(String ingredients) {
+    public void setIngredients(List<String> ingredients) {
         this.ingredients = ingredients;
     }
 
-    public static List<Dish> getChainDishes(org.hibernate.Session session) {
-//        chainDishes = session.createQuery("FROM Dish WHERE isChainDish = true", Dish.class).getResultList();  // get chain dishes from db
-//        return chainDishes;
-        return session.createQuery("FROM Dish WHERE isChainDish = true", Dish.class).getResultList();  // get chain dishes from db
+    public List<String> getToppings() {
+        return toppings;
     }
 
-    // remove dish by object
-    public static void removeDish(Dish dish, org.hibernate.Session session) {
-        session.delete(dish);
+    public void setToppings(List<String> toppings) {
+        this.toppings = toppings;
     }
 
-    // remove dish by id
-    public static void removeDish(int id, org.hibernate.Session session) {
-        Dish dish = session.get(Dish.class, id);
-        if (dish != null) {
-            session.delete(dish);
-        } else {
-            System.out.print("Remove Failed: Dish with id " + id + " not found.\n");
-        }
+    public String getImage() {
+        return image;
     }
 
-//    public String getImage(){
-//        return image;
-//    }
-//
-//    public void setImage(String image){
-//        this.image=image;
-//    }
+    public void setImage(String image) {
+        this.image = image;
+
+    }
+
+    public double getSalePrice() {
+        return salePrice;
+    }
+
+    public void setSalePrice(double salePrice) {
+        this.salePrice = salePrice;
+    }
+
+    public boolean isSalePrice() {
+        return isSalePrice;
+    }
+
+    public void setIsSalePrice(boolean isSalePrice) {
+        this.isSalePrice = isSalePrice;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     @Override
     public String toString() {
-        return "Dish{" + "id=" + id + "} ";
+        return "Dish{" +
+                "id=" + id +
+                ", price=" + price +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", branchID=" + branchID +
+                ", ingredients=" + ingredients +
+//                ", image='" + image + '\'' +
+                ", salePrice=" + salePrice +
+                ", isSalePrice=" + isSalePrice +
+                '}';
     }
-
 }

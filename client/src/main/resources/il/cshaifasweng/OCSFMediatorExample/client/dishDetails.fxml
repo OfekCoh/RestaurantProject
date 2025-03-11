@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/23.0.1"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="il.cshaifasweng.OCSFMediatorExample.client.DishDetailsController"
+            prefHeight="600.0" prefWidth="800.0">
+
+    <children>
+
+        <!-- Cart button pinned top-right, visible only in 'order' mode -->
+        <Button fx:id="cartButton"
+                text="🛒(0)"
+                onAction="#onCartButtonClick"
+                visible="false"
+                AnchorPane.topAnchor="10.0"
+                AnchorPane.rightAnchor="10.0" />
+
+        <!-- Main horizontal layout: left column (text & controls), right column (image) -->
+        <HBox spacing="20"
+              AnchorPane.topAnchor="60.0"
+              AnchorPane.leftAnchor="20.0"
+              AnchorPane.rightAnchor="20.0"
+              AnchorPane.bottomAnchor="20.0">
+
+            <!-- LEFT COLUMN -->
+            <VBox spacing="10" prefWidth="420.0">
+
+                <!-- Dish name & description -->
+                <Label fx:id="dishNameLabel"
+                       style="-fx-font-size:18; -fx-font-weight:bold;"
+                       text="Dish Name" />
+                <Label fx:id="dishDescriptionLabel"
+                       text="Description..." />
+
+                <!-- Ingredients label (like you already had) -->
+                <Label fx:id="dishIngredientsLabel"
+                       text="Ingredients: ..." />
+
+                <!-- NEW: a label that displays the dish's default available toppings -->
+                <Label fx:id="dishToppingsShownLabel"
+                       text="Toppings: ..." />
+
+                <!-- Price & dish type under that -->
+                <Label fx:id="dishPriceLabel"
+                       text="Price: $..." />
+                <Label fx:id="dishTypeLabel"
+                       text="Chain or Branch Dish" />
+
+                <!-- Quantity row (only in order mode) -->
+                <HBox spacing="10">
+                    <Label fx:id="quantityText" text="Quantity:" visible="false"/>
+                    <Button fx:id="quantityMinusButton" text="-" onAction="#onQuantityMinus" visible="false"/>
+                    <Label fx:id="quantityLabel" text="1" visible="false"/>
+                    <Button fx:id="quantityPlusButton" text="+" onAction="#onQuantityPlus" visible="false"/>
+                </HBox>
+
+                <!-- 'Ingredients:' label above adaptation box (only in order mode) -->
+                <Label fx:id="ingredientsAdaptationLabel"
+                       text="Ingredients:"
+                       visible="false"/>
+
+                <!-- Ingredient adaptation box (None/Less/Normal/Extra) for order mode -->
+                <VBox fx:id="ingredientAdaptationBox" spacing="10" visible="false" />
+
+                <!-- The existing label & box for Toppings adaptation (None/Add) remain unchanged -->
+                <Label fx:id="toppingsLabel" text="Toppings:" visible="false"/>
+                <VBox fx:id="toppingsBox" spacing="10" visible="false" />
+
+                <!-- Bottom row with 'Back' on the left, 'Add to Cart' on the right -->
+                <HBox spacing="10">
+                    <Button fx:id="backButton"
+                            text="Back"
+                            onAction="#onBackClick" />
+                    <Button fx:id="addToCartButton"
+                            text="Add to Cart"
+                            onAction="#onAddToCart"
+                            visible="false"/>
+                </HBox>
+
+            </VBox>
+
+            <!-- RIGHT COLUMN: Dish image aligned with the top row (dish name, etc.) -->
+            <ImageView fx:id="dishImageView"
+                       fitHeight="300"
+                       preserveRatio="true" />
+        </HBox>
+    </children>
+</AnchorPane>
