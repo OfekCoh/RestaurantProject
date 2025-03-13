@@ -160,14 +160,7 @@ public class BuyerDetailsFormController {
 
             case "orderTable":
                 System.out.println("submitting a table order");
-                // also update database for these tables to be taken at the next 1.5 hours
-                Alert alert = new Alert(Alert.AlertType.INFORMATION,
-                        String.format("Message: %s\n",
-                                "Order Completed!"
-                        ));
-                alert.show();
-                App.setRoot("primary");
-
+                SimpleClient.getClient().sendAddTableOrder(name, address, phone, userID, cardNumber, month, year, cvv);
                 break;
 
 

@@ -43,7 +43,6 @@ public class OrderTableController {
 
     private DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
-
     @FXML
     public void initialize() {
         // Initially disable ComboBoxes until selections are made.
@@ -231,21 +230,27 @@ public class OrderTableController {
 
     @FXML
     void handleConfirm(ActionEvent event) throws Exception{
-        // check if theres room
-        // if yes- go to payment
-        //
-        // if no- show other hours available in that day,
-        // or ask to change to a different branch with same parameters
+        // Extract values from UI components
+        TableOrderManage.setBranchId(branchComboBox.getValue().getId());
+        TableOrderManage.setDate(datePicker.getValue().toString()); // "2025-03-12" format
+        TableOrderManage.setTime(timeComboBox.getValue());  // hh:mm format
+        TableOrderManage.setNumberOfGuests(numberOfGuestsComboBox.getValue());
+        TableOrderManage.setLocation(sittingLocationComboBox1.getValue());
 
+//        LocalTime time = LocalTime.parse("17:15", DateTimeFormatter.ofPattern("HH:mm"));
+//        LocalTime plus1Hour = time.plusHours(1);       // Adds 1 hour (18:15)
+//        LocalTime plus30Min = time.plusMinutes(30);    // Adds 30 minutes (17:45)
+//        LocalTime plus90Min = time.plusMinutes(90);    // Adds 1 hour 30 minutes (18:45)
+//        LocalTime plus10Sec = time.plusSeconds(10);    // Adds 10 seconds
 
-        if(SimpleClient.userID != -1) {   // if it's a worker
-            System.out.println("Worker gave costumers a table");
-            App.setRoot("primary");
-        }
-        else {  // if it's a costumer
-            System.out.println("A costumer wants to get a table, sending him to fill payments");
-            BuyerDetailsFormController.setCallerType("orderTable");  // Pass caller "cart" to buyerform
-            App.setRoot("buyerForm");
+        // check database for open tables at the given times
+        try {
+            SimpleClient.getClient().sendCheckTables();
+
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, ("Something went wrong! Please try again."));
+            alert.show();
+            throw new RuntimeException(e);
         }
     }
 

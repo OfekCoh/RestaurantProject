@@ -3,11 +3,13 @@ package il.cshaifasweng.OCSFMediatorExample.client;
 import il.cshaifasweng.OCSFMediatorExample.client.Events.*;
 import il.cshaifasweng.OCSFMediatorExample.entities.*;
 import javafx.application.Platform;
+import javafx.scene.control.Alert;
 import org.greenrobot.eventbus.EventBus;
 
 import il.cshaifasweng.OCSFMediatorExample.client.ocsf.AbstractClient;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -77,6 +79,7 @@ public class SimpleClient extends AbstractClient {
                     }
                     break;
                 }
+
                 case "menuResponse": {
                     System.out.println("Client: Menu success!");
                     //TODO RETURN also branches in payload 0. also return array list of list dish for each branch.
@@ -111,12 +114,14 @@ public class SimpleClient extends AbstractClient {
                     EventBus.getDefault().post(new BranchEvent(BranchList));
                     break;
                 }
+
                 case "menuChange": {
                     List<MenuChangeEnt> menuChangeList = (List<MenuChangeEnt>) payload[0];
                     System.out.println("Received menuChange with " + menuChangeList.size() + " dishes.");
                     EventBus.getDefault().post(new MenuChangeEvent(menuChangeList));
                     break;
                 }
+
                 case "orderResponse": {
                     System.out.println("Client: Order success!");
                     System.out.println("Received orderResponse with " + payload[0] + " ID.");
@@ -138,6 +143,31 @@ public class SimpleClient extends AbstractClient {
                     break;
                 }
 
+                case "TableOrderResponse": {
+                    System.out.println("Client: Order success!");
+                    System.out.println("Received orderResponse with " + payload[0] + " ID.");
+                    Platform.runLater(() -> {
+                        try {
+//                            OrderStatusController.setType((String) payload[0]);
+//                            OrderStatusController.setOrderID((int) payload[1]);
+//                            if(((String) payload[0]).equalsIgnoreCase("cancel"))
+//                            {
+//                                OrderStatusController.setRefundAmount((double) payload[2]);
+//                            }else{
+//                                OrderStatusController.setRefundAmount(0);
+//                            }
+
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION, ("Order Completed for " + TableOrderManage.getDate() + " at " + TableOrderManage.getTime()) + "!");
+                            alert.show();
+                            App.setRoot("primary");
+
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    break;
+                }
+
                 case "complaints response": {
                     List<ComplaintEnt> complaints = (List<ComplaintEnt>) payload[0];
                     EventBus.getDefault().post(new ComplaintEvent(complaints));
@@ -145,6 +175,54 @@ public class SimpleClient extends AbstractClient {
                     break;
                 }
 
+                case "availableTables response": {
+                    List<Integer> availableTablesIds = (List<Integer>) payload[0];
+                    System.out.println("Server: availableTablesIds = " + availableTablesIds);
+
+                    if(availableTablesIds == null) {  // must've been an error. try again
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.ERROR, ("Something went wrong! Please try again."));
+                            alert.show();
+                        });
+                        break;
+                    }
+
+                    else if(availableTablesIds.isEmpty()) {  // no seats at this time
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION, "There are no free seats! Please try a different time or branch.");
+                            alert.show();
+                        });
+                        break;
+                    }
+
+                    // there are seats
+                    try {
+                        if(SimpleClient.userID != -1) {   // it's a worker
+                            System.out.println("A worker wants to get a table for a costumer");
+                            TableOrderManage.setAvailableTablesIds(availableTablesIds); // add tables to the order
+
+                            // add this order to the database. buyer details don't matter
+                            sendAddTableOrder(null, null, null, null, null, null, null, null);
+                        }
+                        else {  // it's a costumer
+                            System.out.println("A costumer wants to get a table, sending him to fill payments");
+                            BuyerDetailsFormController.setCallerType("orderTable");  // Pass caller "cart" to buyerform
+
+                            Platform.runLater(() -> {
+                                try {
+                                    App.setRoot("buyerForm");  // Switch to the buyer form scene
+                                } catch (IOException e) {
+                                    e.printStackTrace();  // Handle potential IOException if App.setRoot throws an exception
+                                }
+                            });
+                        }
+                    }
+                    catch (Exception e) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR, ("Something went wrong! Please try again."));
+                        alert.show();
+                    }
+                    break;
+                }
 
                 // If you want server to respond with a "menuResponse" message, do it here
                 // case "menuResponse": { ... } break;
@@ -245,12 +323,31 @@ public class SimpleClient extends AbstractClient {
     public void sendCancelOrder(int orderId, String phoneNum) throws IOException {
         Message message = new Message("cancel order", new Object[]{orderId,phoneNum});
         sendToServer(message);
+
     }
 
-//    public void sendAddTableOrder(String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv) throws IOException {
-//        Message message = new Message("add table order", new Object[]{name, address, phone, userId, cardNumber, month, year, cvv});
-//        sendToServer(message);
-//    }
+    //----------------------------------
+    public void sendCheckTables() throws IOException {
+        Message message = new Message("check tables", new Object[]{
+                TableOrderManage.getBranchId(),
+                TableOrderManage.getDate(),
+                TableOrderManage.getTime(),
+                TableOrderManage.getNumberOfGuests(),
+                TableOrderManage.getLocation()});
+        sendToServer(message);
+    }
+    public void sendAddTableOrder(String name, String address, String phone, String userID, String cardNumber, Integer month,Integer  year, String cvv) throws IOException {
+        Message message = new Message("add table order", new Object[]{
+                TableOrderManage.getAvailableTablesIds(),
+                TableOrderManage.getBranchId(),
+                TableOrderManage.getDate(),
+                TableOrderManage.getTime(),
+                TableOrderManage.getNumberOfGuests(),
+                TableOrderManage.getLocation(),
+                name, address, phone, userID, cardNumber, month, year, cvv});
+        sendToServer(message);
+    }
+//----------------------------------
 
     public void sendLoginCommand(String email, String password) throws Exception {
         Message message = new Message("login", new Object[]{email, password});
