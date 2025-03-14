@@ -13,14 +13,11 @@ public class TableOrder {
     private int orderId;
 
     @Column(nullable = false)
-    private int numOfPeople; // מספר סועדים
+    private int numberOfGuests;
 
     @Column(nullable = false)
     private int branchId;
 
-
-    //I'm not sure if we want an int list that will represent table id's , much easier.
-    // If one order can span multiple tables, use ManyToMany:
     @ManyToMany
     @JoinTable(
             name = "table_order_tables",
@@ -30,10 +27,13 @@ public class TableOrder {
     private List<TableSchema> tables; // Table IDs
 
     @Column(nullable = false)
-    private LocalDateTime startDate;
+    private String date;
 
     @Column(nullable = false)
-    private LocalDateTime endDate;
+    private String time;
+
+    @Column(nullable = false)
+    private String location;
 
     @Column(nullable = false)
     private int status; // 0=Pending, 1=Free-Canceled, 2=Partly-Refund, 3=No refund, 4=Completed
@@ -42,34 +42,36 @@ public class TableOrder {
     @Column(nullable = false)
     private WhoSubmittedBy whoSubmitted; // ORDERED/מארחת
 
-    // Embedding BuyerDetails to be stored in the same table
     @Embedded
-    private BuyerDetails buyerDetails;
+    private BuyerDetails buyerDetails; // Embedding BuyerDetails to be stored in the same table
 
     public TableOrder() {
     }
 
-    public TableOrder(int numOfPeople, int branchId, List<TableSchema> tables, LocalDateTime startDate, LocalDateTime endDate, int status, WhoSubmittedBy whoSubmitted, BuyerDetails buyerDetails) {
-        this.numOfPeople = numOfPeople;
+    public TableOrder(int branchId, List<TableSchema> tables, String date, String time, int numberOfGuests, String location, int status, boolean buyerDetailsNeeded, BuyerDetails buyerDetails) {
         this.branchId = branchId;
         this.tables = tables;
-        this.startDate = startDate;
-        this.endDate = endDate;
+        this.date = date;
+        this.time = time;
+        this.numberOfGuests = numberOfGuests;
+        this.location = location;
         this.status = status;
-        this.whoSubmitted = whoSubmitted;
         this.buyerDetails = buyerDetails;
+
+        if(buyerDetailsNeeded) this.whoSubmitted = WhoSubmittedBy.ORDERED;
+        else this.whoSubmitted = WhoSubmittedBy.HOSTESS;
     }
 
     public int getOrderId() {
         return orderId;
     }
 
-    public int getNumOfPeople() {
-        return numOfPeople;
+    public int getNumberOfGuests() {
+        return numberOfGuests;
     }
 
-    public void setNumOfPeople(int numOfPeople) {
-        this.numOfPeople = numOfPeople;
+    public void setNumberOfGuests(int numberOfGuests) {
+        this.numberOfGuests = numberOfGuests;
     }
 
     public int getBranchId() {
@@ -88,20 +90,28 @@ public class TableOrder {
         this.tables = tables;
     }
 
-    public LocalDateTime getStartDate() {
-        return startDate;
+    public String getLocation() {
+        return location;
     }
 
-    public void setStartDate(LocalDateTime startDate) {
-        this.startDate = startDate;
+    public void setLocation(String location) {
+        this.location = location;
     }
 
-    public LocalDateTime getEndDate() {
-        return endDate;
+    public String getDate() {
+        return date;
     }
 
-    public void setEndDate(LocalDateTime endDate) {
-        this.endDate = endDate;
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public String getTime() {
+        return time;
+    }
+
+    public void setTime(String time) {
+        this.time = time;
     }
 
     public int getStatus() {
@@ -152,11 +162,11 @@ public class TableOrder {
     public String toString() {
         return "TableOrder{" +
                 "orderId=" + orderId +
-                ", numOfPeople=" + numOfPeople +
+                ", numOfPeople=" + numberOfGuests +
                 ", branchId=" + branchId +
                 ", tables=" + (tables != null ? tables.size() : 0) +
-                ", startDate=" + startDate +
-                ", endDate=" + endDate +
+                ", date=" + date +
+                ", time=" + time +
                 ", status=" + status +
                 ", whoSubmitted=" + whoSubmitted +
                 ", buyerDetails=" + buyerDetails +

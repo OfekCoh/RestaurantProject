@@ -234,6 +234,17 @@ public class DatabaseServer {
         return branches;
     }
 
+    public static List<BranchEnt> getBranches() {
+        try (Session session = getSessionFactory().openSession()) {
+            List<RestaurantBranch> allBranches = getAllBranches(session);
+            return convertToBranchEntList(allBranches);
+        } catch (Exception e) {
+            System.err.println("Error fetching branches: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
     public static List<MenuChanges> getAllMenuChanges(Session session) throws Exception {
         CriteriaBuilder builder = session.getCriteriaBuilder();
         CriteriaQuery<MenuChanges> query = builder.createQuery(MenuChanges.class);
@@ -269,12 +280,38 @@ public class DatabaseServer {
         }
     }
 
-    public static List<BranchEnt> getBranches() {
+    public static List<TableSchema> getAllTables() throws Exception {
         try (Session session = getSessionFactory().openSession()) {
-            List<RestaurantBranch> allBranches = getAllBranches(session);
-            return convertToBranchEntList(allBranches);
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaQuery<TableSchema> query = builder.createQuery(TableSchema.class);
+            Root<TableSchema> root = query.from(TableSchema.class);
+
+            query.select(root).distinct(true); // Ensure distinct branches
+            return session.createQuery(query).getResultList();
+
         } catch (Exception e) {
-            System.err.println("Error fetching branches: " + e.getMessage());
+            System.err.println("Error fetching tables: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    public static List<TableSchema> getTablesWithIds(List<Integer> tableIds) throws Exception {
+        if (tableIds == null || tableIds.isEmpty()) {
+            System.out.println("DatabaseServer.getTableWithIds- input is null or empty");
+            return Collections.emptyList();
+        }
+
+        try (Session session = getSessionFactory().openSession()) {
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaQuery<TableSchema> query = builder.createQuery(TableSchema.class);
+            Root<TableSchema> root = query.from(TableSchema.class);
+
+            query.select(root).where(root.get("tableId").in(tableIds)).distinct(true);
+            return session.createQuery(query).getResultList();
+
+        } catch (Exception e) {
+            System.err.println("Error fetching tables: " + e.getMessage());
             e.printStackTrace();
             return Collections.emptyList();
         }
@@ -332,7 +369,8 @@ public class DatabaseServer {
         }
     }
 
-    public static int addOrder(Order newOrder) {
+    // T can be Order or TableOrder
+    public static <T> int addOrder(T newOrder) {
         int orderId = -1;
         try (Session session = getSessionFactory().openSession()) {
             Transaction transaction = session.beginTransaction();
@@ -421,22 +459,25 @@ public class DatabaseServer {
     public static List<Integer> checkAvailableTables(int branchId, String date, String time, int numberOfGuests, String location) {
         List<Integer> availableTables= new ArrayList<>();
 
-        availableTables.add(1); // just to check
+        availableTables.add(1);
 
+//        String query = "SELECT id FROM table WHERE branch = ? AND size >= ? AND location = ? " +
+//                "AND id NOT IN (SELECT table_id FROM tableOrder WHERE branch = ? AND date = ? AND time = ? AND status = 'BOOKED')";
+//
 //        try (Connection conn = DatabaseConnection.getConnection();
 //             PreparedStatement stmt = conn.prepareStatement(query)) {
 //
 //            stmt.setInt(1, branchId);
-//            stmt.setString(2, date);
-//            stmt.setString(3, time);
-//            stmt.setInt(4, numberOfGuests);
-//            stmt.setString(5, location);
+//            stmt.setInt(2, numberOfGuests);
+//            stmt.setString(3, location);
+//            stmt.setInt(4, branchId);
+//            stmt.setString(5, date);
+//            stmt.setString(6, time);
 //
 //            ResultSet rs = stmt.executeQuery();
 //
 //            while (rs.next()) {
-//                int tableId = rs.getInt("table_id");
-//                availableTables.add(tableId);
+//                availableTables.add(rs.getInt("id"));
 //            }
 //
 //        } catch (SQLException e) {
@@ -445,28 +486,6 @@ public class DatabaseServer {
 
         return availableTables; // Returns the number of available seats
     }
-
-    public static int addTableOrder(TableOrder newTableOrder) {
-        int orderId=1;
-//        try (Session session = getSessionFactory().openSession()) {
-//            Transaction transaction = session.beginTransaction();
-//
-//            orderId = (Integer) session.save(newOrder);
-//
-//            if (session.contains(newOrder)) { //Check if successfully added
-//                transaction.commit();
-//                return orderId;
-//            } else {
-//                transaction.rollback();
-//                System.err.println("Failed to insert order: " + newOrder);
-//                return orderId;
-//            }
-//        } catch (Exception e) {
-//            System.err.println("Failed to add order: " + e.getMessage());
-//            e.printStackTrace();
-        return orderId;
-    }
-
 
 public static boolean addDish(Dish newDish) {
     try (Session session = getSessionFactory().openSession()) {

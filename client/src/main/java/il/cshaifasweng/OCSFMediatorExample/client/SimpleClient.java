@@ -144,8 +144,7 @@ public class SimpleClient extends AbstractClient {
                 }
 
                 case "TableOrderResponse": {
-                    System.out.println("Client: Order success!");
-                    System.out.println("Received orderResponse with " + payload[0] + " ID.");
+                    System.out.println("Order success! order id is: " + payload[0]);
                     Platform.runLater(() -> {
                         try {
 //                            OrderStatusController.setType((String) payload[0]);
@@ -157,7 +156,7 @@ public class SimpleClient extends AbstractClient {
 //                                OrderStatusController.setRefundAmount(0);
 //                            }
 
-                            Alert alert = new Alert(Alert.AlertType.INFORMATION, ("Order Completed for " + TableOrderManage.getDate() + " at " + TableOrderManage.getTime()) + "!");
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION, ("Order #" + payload[0] + " Completed for " + TableOrderManage.getDate() + " at " + TableOrderManage.getTime()) + "!\n See you then!");
                             alert.show();
                             App.setRoot("primary");
 
@@ -177,7 +176,6 @@ public class SimpleClient extends AbstractClient {
 
                 case "availableTables response": {
                     List<Integer> availableTablesIds = (List<Integer>) payload[0];
-                    System.out.println("Server: availableTablesIds = " + availableTablesIds);
 
                     if(availableTablesIds == null) {  // must've been an error. try again
                         Platform.runLater(() -> {
@@ -187,7 +185,13 @@ public class SimpleClient extends AbstractClient {
                         break;
                     }
 
+                    // TODO offer other options or branch
                     else if(availableTablesIds.isEmpty()) {  // no seats at this time
+
+                        //
+                        //   add your code here
+                        //
+
                         Platform.runLater(() -> {
                             Alert alert = new Alert(Alert.AlertType.INFORMATION, "There are no free seats! Please try a different time or branch.");
                             alert.show();
@@ -196,16 +200,16 @@ public class SimpleClient extends AbstractClient {
                     }
 
                     // there are seats
+                    System.out.println("SimpleClient.response: availableTablesIds = " + availableTablesIds);
+                    TableOrderManage.setAvailableTablesIds(availableTablesIds); // add tables to the order
+
                     try {
                         if(SimpleClient.userID != -1) {   // it's a worker
-                            System.out.println("A worker wants to get a table for a costumer");
-                            TableOrderManage.setAvailableTablesIds(availableTablesIds); // add tables to the order
 
                             // add this order to the database. buyer details don't matter
-                            sendAddTableOrder(null, null, null, null, null, null, null, null);
+                            sendAddTableOrder("-", "-", "-", "-", "-", -1, -1, "-");
                         }
                         else {  // it's a costumer
-                            System.out.println("A costumer wants to get a table, sending him to fill payments");
                             BuyerDetailsFormController.setCallerType("orderTable");  // Pass caller "cart" to buyerform
 
                             Platform.runLater(() -> {

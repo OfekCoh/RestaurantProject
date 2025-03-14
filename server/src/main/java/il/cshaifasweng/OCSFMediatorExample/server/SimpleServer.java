@@ -7,6 +7,7 @@ import il.cshaifasweng.OCSFMediatorExample.server.ocsf.ConnectionToClient;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -524,36 +525,35 @@ public class SimpleServer extends AbstractServer {
                             String phone = (String) payload[8];
                             String userId = (String) payload[9];
                             String cardNum = (String) payload[10];
-                            int cardMonth = (payload[11] != null) ? (int) payload[11] : 1;   // cause int cant be null, we cant change to Integer also
-                            int cardYear = (payload[12] != null) ? (int) payload[12] : 1;
+                            int cardMonth = (int) payload[11];
+                            int cardYear = (int) payload[12];
                             String cvv = (String) payload[13];
 
-                            // Determine if the order is for delivery
-                            boolean buyerDetailsNeeded = (name!=null);
+                            // needed if is ordered online or in place by the host
+                            boolean buyerDetailsNeeded = !name.equals("-");
+                            BuyerDetails buyerDetails = new BuyerDetails(name, address, phone, userId, cardNum, cardMonth, cardYear, cvv); // Create BuyerDetails with buyer's info.
 
-                            TableOrder newTableOrder= new TableOrder(); // just for the check
+                            // if for some reason input didn't pass right
+                            if (availableTablesIds == null || availableTablesIds.isEmpty()) {
+                                System.out.println("SimpleServer: availableTablesIds is null or empty.");
+                                throw new Exception("Pleas try again.");
+                            }
 
-//                            if(buyerDetailsNeeded) {  // means the order is from a client
-//                                BuyerDetails buyerDetails = new BuyerDetails(name, address, phone, userId, cardNum, cardMonth, cardYear, cvv); // Create BuyerDetails with buyer's info.
-////                                TableOrder newTableOrder= new TableOrder(numberOfGuests,branchId,);
-//
-////                              int numOfPeople, int branchId, List<TableSchema> tables, LocalDateTime
-////                                  starTableOrder newTableOrder= new TableOrder(numberOfGuests,branchId,)
-//
-//                            }
-//
-//                            else { // means the host ordered the table
-////                                TableOrder newTableOrder= new TableOrder(numberOfGuests,branchId,)
-////                            int numOfPeople, int branchId, List<TableSchema> tables, LocalDateTime
-////                            startDate, LocalDateTime endDate, int status, WhoSubmittedBy whoSubmitted, BuyerDetails buyerDetails
-//
-//                            }
+                            // get the tables by their ids
+                            List<TableSchema> tables= DatabaseServer.getTablesWithIds(availableTablesIds);
 
-                            int orderId = DatabaseServer.addTableOrder(newTableOrder);
+                            // if there was an error retrieving the tables
+                            if (tables == null || tables.isEmpty()) {
+                                System.out.println("SimpleServer: tables list is null or empty.");
+                                throw new Exception("Pleas try again.");
 
-                            System.out.println("Added table order with id: " + orderId);
+                            }
 
-                            if (orderId != -1) { // sucess
+                            TableOrder tableOrder= new TableOrder(branchId, tables, date, time, numberOfGuests, location, 0, buyerDetailsNeeded, buyerDetails);
+                            int orderId = DatabaseServer.addOrder(tableOrder); // return the id of the new order. -1 if failed
+
+                            if (orderId != -1) { // success
+                                System.out.println("Added table order with id: " + orderId);
                                 Message response = new Message("TableOrderResponse", new Object[]{orderId});
                                 client.sendToClient(response);
                             } else {  // fail
