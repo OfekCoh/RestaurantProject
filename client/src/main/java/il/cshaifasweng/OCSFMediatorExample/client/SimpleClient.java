@@ -147,16 +147,12 @@ public class SimpleClient extends AbstractClient {
                     System.out.println("Order success! order id is: " + payload[0]);
                     Platform.runLater(() -> {
                         try {
-//                            OrderStatusController.setType((String) payload[0]);
-//                            OrderStatusController.setOrderID((int) payload[1]);
-//                            if(((String) payload[0]).equalsIgnoreCase("cancel"))
-//                            {
-//                                OrderStatusController.setRefundAmount((double) payload[2]);
-//                            }else{
-//                                OrderStatusController.setRefundAmount(0);
-//                            }
-
-                            Alert alert = new Alert(Alert.AlertType.INFORMATION, ("Order #" + payload[0] + " Completed for " + TableOrderManage.getDate() + " at " + TableOrderManage.getTime()) + "!\n See you then!");
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION, ("Date: " + TableOrderManage.getDate() + " at " + TableOrderManage.getTime()) +
+                                    "\n\nA reservation lasts for 90 minutes or until closing time (whichever comes first)." +
+                                    "\n\nPlease note: order number required for cancellation" +
+                                    "\n\nSee you then!");
+                            alert.setHeaderText("Order #" + payload[0] + " Completed!");
+                            alert.setTitle("Order Info");
                             alert.show();
                             App.setRoot("primary");
 
@@ -193,7 +189,8 @@ public class SimpleClient extends AbstractClient {
                         //
 
                         Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.INFORMATION, "There are no free seats! Please try a different time or branch.");
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Please try a different time or branch.");
+                            alert.setHeaderText("There are no free tables!");
                             alert.show();
                         });
                         break;
@@ -330,7 +327,6 @@ public class SimpleClient extends AbstractClient {
 
     }
 
-    //----------------------------------
     public void sendCheckTables() throws IOException {
         Message message = new Message("check tables", new Object[]{
                 TableOrderManage.getBranchId(),
@@ -340,6 +336,7 @@ public class SimpleClient extends AbstractClient {
                 TableOrderManage.getLocation()});
         sendToServer(message);
     }
+
     public void sendAddTableOrder(String name, String address, String phone, String userID, String cardNumber, Integer month,Integer  year, String cvv) throws IOException {
         Message message = new Message("add table order", new Object[]{
                 TableOrderManage.getAvailableTablesIds(),
@@ -351,7 +348,6 @@ public class SimpleClient extends AbstractClient {
                 name, address, phone, userID, cardNumber, month, year, cvv});
         sendToServer(message);
     }
-//----------------------------------
 
     public void sendLoginCommand(String email, String password) throws Exception {
         Message message = new Message("login", new Object[]{email, password});

@@ -498,6 +498,7 @@ public class SimpleServer extends AbstractServer {
                             System.out.println("Received table check request: Branch=" + branchId + ", Date=" + date + ", Time=" + time + ", Guests=" + numberOfGuests + ", Location=" + location);
 
                             List<Integer> availableTablesIds = DatabaseServer.checkAvailableTables(branchId, date, time, numberOfGuests, location);
+                            if(availableTablesIds != null) System.out.println("availableTablesIds: " + availableTablesIds);
 
                             // Send response back to client
                             Message response = new Message("availableTables response", new Object[]{availableTablesIds});

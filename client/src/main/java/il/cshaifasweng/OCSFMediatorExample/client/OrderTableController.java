@@ -118,11 +118,13 @@ public class OrderTableController {
                 ));
 
                 // add choices to seats
-                sittingLocationComboBox1.setItems(FXCollections.observableArrayList("Doesnt Matter", "Inside", "Outside"));
+//                sittingLocationComboBox1.setItems(FXCollections.observableArrayList("Doesnt Matter", "INDOOR", "OUTDOOR"));
+                sittingLocationComboBox1.setItems(FXCollections.observableArrayList("INDOOR", "OUTDOOR"));
 
                 // Set default selections if none were chosen already
                 if (sittingLocationComboBox1.getValue() == null) {
-                    sittingLocationComboBox1.setValue("Doesnt Matter");
+//                    sittingLocationComboBox1.setValue("Doesnt Matter");
+                    sittingLocationComboBox1.setValue("INDOOR");
                 }
                 if (numberOfGuestsComboBox.getValue() == null) {
                     numberOfGuestsComboBox.setValue(2);

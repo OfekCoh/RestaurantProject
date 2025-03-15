@@ -9,6 +9,8 @@ import org.hibernate.service.ServiceRegistry;
 import javax.persistence.criteria.*;
 import java.io.InputStream;
 import java.util.*;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 import static il.cshaifasweng.OCSFMediatorExample.server.Convertor.*;
 
@@ -455,348 +457,451 @@ public class DatabaseServer {
         }
     }
 
-    // TODO finish this
-    public static List<Integer> checkAvailableTables(int branchId, String date, String time, int numberOfGuests, String location) {
-        List<Integer> availableTables= new ArrayList<>();
+    public static List<Integer> checkAvailableTables(int branchId, String date, String time, int numberOfDiners, String location) {
+        List<Integer> availableTables = new ArrayList<>();
+        List<Integer> numberOfDinersList = new ArrayList<>();  // the indexes will match between the table id and its size
 
-        availableTables.add(1);
+        // for an order at time 10:00 we will check the table is not reserved for 8:45-11:15
+        LocalTime requestedTime = LocalTime.parse(time); // "HH:mm" format
+        LocalTime startTime = requestedTime.minusMinutes(75);
+        LocalTime endTime = requestedTime.plusMinutes(75);
 
-//        String query = "SELECT id FROM table WHERE branch = ? AND size >= ? AND location = ? " +
-//                "AND id NOT IN (SELECT table_id FROM tableOrder WHERE branch = ? AND date = ? AND time = ? AND status = 'BOOKED')";
-//
-//        try (Connection conn = DatabaseConnection.getConnection();
-//             PreparedStatement stmt = conn.prepareStatement(query)) {
-//
-//            stmt.setInt(1, branchId);
-//            stmt.setInt(2, numberOfGuests);
-//            stmt.setString(3, location);
-//            stmt.setInt(4, branchId);
-//            stmt.setString(5, date);
-//            stmt.setString(6, time);
-//
-//            ResultSet rs = stmt.executeQuery();
-//
-//            while (rs.next()) {
-//                availableTables.add(rs.getInt("id"));
-//            }
-//
-//        } catch (SQLException e) {
-//            e.printStackTrace(); // Replace with proper logging
-//        }
+        // Format time for SQL consistency
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+        String startTimeStr = startTime.format(formatter);
+        String endTimeStr = endTime.format(formatter);
 
-        return availableTables; // Returns the number of available seats
+        try (Session session = getSessionFactory().openSession()) {
+            // Query to find tables that match the criteria and are NOT in a conflicting order
+            String queryStr = """
+            SELECT t.tableId FROM TableSchema t
+            WHERE t.branch.id = :branchId
+            AND t.location = :location
+            AND t.tableId NOT IN (
+                SELECT t2.tableId FROM TableOrder o
+                JOIN o.tables t2
+                WHERE o.branchId = :branchId
+                AND o.date = :date
+                AND o.location = :location
+                AND o.time BETWEEN :startTime AND :endTime
+            )
+            ORDER BY t.numberOfDiners ASC
+            """;
+
+            // Create a query and set parameters
+            Query<Integer> query = session.createQuery(queryStr, Integer.class);
+            query.setParameter("branchId", branchId);
+            query.setParameter("location", LocationType.valueOf(location));
+            query.setParameter("date", date);
+            query.setParameter("startTime", startTimeStr);
+            query.setParameter("endTime", endTimeStr);
+
+            // Execute the query and store the result in availableTables
+            availableTables = query.getResultList();
+
+            // For every table in the list add its size to numberOfDinersList
+            for (Integer tableId : availableTables) {
+                TableSchema table = session.get(TableSchema.class, tableId);
+                if(table!=null) numberOfDinersList.add(table.getNumberOfDiners());
+                else throw new RuntimeException("checkAvailableTables: A table with id " + tableId + " not found");
+            }
+
+            return getMinTablesNeeded(availableTables, numberOfDinersList, numberOfDiners); // Return the list of available tables
+
+        } catch (Exception e) {
+            System.err.println("Error fetching tables: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
     }
 
-public static boolean addDish(Dish newDish) {
-    try (Session session = getSessionFactory().openSession()) {
-        Transaction transaction = session.beginTransaction();
+    public static List<Integer> getMinTablesNeeded(List<Integer> tables_id, List<Integer> tables_num, int diners) {
+    // we could make it work with more general table sizes but work explicitly said only 3 given sizes.
+        List<Integer> minTablesNeeded = new ArrayList<>(); // the returned list
+        // A list of ids of each size table, just for a simpler code.
+        List<Integer> ids_with_two = new ArrayList<>();
+        List<Integer> ids_with_three = new ArrayList<>();
+        List<Integer> ids_with_four = new ArrayList<>();
 
-        session.save(newDish);
+        // fill the lists
+        for(int i=0; i<tables_num.size(); i++) {
+            int tableSize = tables_num.get(i); // Get the number of diners for this table
+            if (tableSize==2) ids_with_two.add(tables_id.get(i));
+            else if (tableSize==3) ids_with_three.add(tables_id.get(i));
+            else if(tableSize==4) ids_with_four.add(tables_id.get(i));
+        }
 
-        if (session.contains(newDish)) { //Check if successfully added
+        // loop to add tables until all diners are seated
+        while(diners>0) {
+            if (diners<=2) { // try to add the smallest
+                if (!ids_with_two.isEmpty()) {
+                    minTablesNeeded.add(ids_with_two.remove(0)); // Pick a table of 2
+                    diners -= 2;
+                    continue;
+                }
+                if (!ids_with_three.isEmpty()) {
+                    minTablesNeeded.add(ids_with_three.remove(0)); // Pick a table of 3
+                    diners -= 3;
+                    continue;
+                }
+                if (!ids_with_four.isEmpty()) {
+                    minTablesNeeded.add(ids_with_four.remove(0)); // Pick a table of 4
+                    diners -= 4;
+                    continue;
+                }
+            }
+
+            else if (diners==3) { // order to try is 3 4 2
+                if (!ids_with_three.isEmpty()) {
+                    minTablesNeeded.add(ids_with_three.remove(0)); // Pick a table of 3
+                    diners -= 3;
+                    continue;
+                }
+                if (!ids_with_four.isEmpty()) {
+                    minTablesNeeded.add(ids_with_four.remove(0)); // Pick a table of 4
+                    diners -= 4;
+                    continue;
+                }
+                if (!ids_with_two.isEmpty()) {
+                    minTablesNeeded.add(ids_with_two.remove(0)); // Pick a table of 2
+                    diners -= 2;
+                    continue;
+                }
+            }
+
+            else if (diners>=4) { // order to try is 4 3 2
+                if (!ids_with_four.isEmpty()) {
+                    minTablesNeeded.add(ids_with_four.remove(0)); // Pick a table of 4
+                    diners -= 4;
+                    continue;
+                }
+                if (!ids_with_three.isEmpty()) {
+                    minTablesNeeded.add(ids_with_three.remove(0)); // Pick a table of 3
+                    diners -= 3;
+                    continue;
+                }
+                if (!ids_with_two.isEmpty()) {
+                    minTablesNeeded.add(ids_with_two.remove(0)); // Pick a table of 2
+                    diners -= 2;
+                    continue;
+                }
+            }
+
+            return Collections.emptyList(); // No more tables available so we cant fill the order
+        }
+        return minTablesNeeded;
+    }
+
+    public static boolean addDish(Dish newDish) {
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            session.save(newDish);
+
+            if (session.contains(newDish)) { //Check if successfully added
+                transaction.commit();
+                return true;
+            } else {
+                transaction.rollback();
+                System.err.println("Failed to insert dish: " + newDish);
+                return false;
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to add dish: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean updateDish(Dish updatedDish) {
+        Transaction transaction = null;
+        try (Session session = getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+
+            // 1) Retrieve the existing dish from DB
+            Dish existingDish = session.get(Dish.class, updatedDish.getId());
+            if (existingDish == null) {
+                System.out.println("Dish with ID " + updatedDish.getId() + " does not exist.");
+                return false;
+            }
+
+            // 2) Update fields from the 'updatedDish' object
+            existingDish.setName(updatedDish.getName());
+            existingDish.setDescription(updatedDish.getDescription());
+            existingDish.setBranchID(updatedDish.getBranchID());
+            existingDish.setIngredients(updatedDish.getIngredients());
+            existingDish.setToppings(updatedDish.getToppings());
+            existingDish.setImage(updatedDish.getImage());
+            existingDish.setPrice(updatedDish.getPrice());
+            existingDish.setSalePrice(updatedDish.getSalePrice());
+            existingDish.setIsSalePrice(updatedDish.isSalePrice());
+
+            // 3) Persist in DB
+            session.update(existingDish);
             transaction.commit();
             return true;
-        } else {
-            transaction.rollback();
-            System.err.println("Failed to insert dish: " + newDish);
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
             return false;
         }
-    } catch (Exception e) {
-        System.err.println("Failed to add dish: " + e.getMessage());
-        e.printStackTrace();
-        return false;
     }
-}
 
-public static boolean updateDish(Dish updatedDish) {
-    Transaction transaction = null;
-    try (Session session = getSessionFactory().openSession()) {
-        transaction = session.beginTransaction();
+    /*
+     * This method updates the price of the specific dish with the id to the new price
+     * @param id - the id of the dish
+     * @param price - the new price for the dish
+     * @throws Exception - in case we didn't succeed in updating
+     */
+    public static void updatePriceForDish(int id, double price, boolean isSalePrice, double salePrice) {
+        Transaction transaction = null;
+        try (Session session = getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
 
-        // 1) Retrieve the existing dish from DB
-        Dish existingDish = session.get(Dish.class, updatedDish.getId());
-        if (existingDish == null) {
-            System.out.println("Dish with ID " + updatedDish.getId() + " does not exist.");
-            return false;
-        }
-
-        // 2) Update fields from the 'updatedDish' object
-        existingDish.setName(updatedDish.getName());
-        existingDish.setDescription(updatedDish.getDescription());
-        existingDish.setBranchID(updatedDish.getBranchID());
-        existingDish.setIngredients(updatedDish.getIngredients());
-        existingDish.setToppings(updatedDish.getToppings());
-        existingDish.setImage(updatedDish.getImage());
-        existingDish.setPrice(updatedDish.getPrice());
-        existingDish.setSalePrice(updatedDish.getSalePrice());
-        existingDish.setIsSalePrice(updatedDish.isSalePrice());
-
-        // 3) Persist in DB
-        session.update(existingDish);
-        transaction.commit();
-        return true;
-    } catch (Exception e) {
-        if (transaction != null) {
-            transaction.rollback();
-        }
-        e.printStackTrace();
-        return false;
-    }
-}
-
-/*
- * This method updates the price of the specific dish with the id to the new price
- * @param id - the id of the dish
- * @param price - the new price for the dish
- * @throws Exception - in case we didn't succeed in updating
- */
-public static void updatePriceForDish(int id, double price, boolean isSalePrice, double salePrice) {
-    Transaction transaction = null;
-    try (Session session = getSessionFactory().openSession()) {
-        transaction = session.beginTransaction();
-
-        CriteriaBuilder builder = session.getCriteriaBuilder();
-        CriteriaUpdate<Dish> criteriaUpdate = builder.createCriteriaUpdate(Dish.class);
-        Root<Dish> root = criteriaUpdate.from(Dish.class);
-        criteriaUpdate.set(root.get("price"), price);
-        criteriaUpdate.set(root.get("isSalePrice"), isSalePrice);
-        criteriaUpdate.set(root.get("salePrice"), salePrice);
-        criteriaUpdate.where(builder.equal(root.get("id"), id));
-
-        session.createQuery(criteriaUpdate).executeUpdate();
-        transaction.commit();
-    } catch (Exception e) {
-        if (transaction != null) {
-            transaction.rollback();
-        }
-        e.printStackTrace();
-    }
-}
-
-public static void deleteMenuChange(int id) {
-    try (Session session = getSessionFactory().openSession()) {
-        Transaction transaction = session.beginTransaction();
-        MenuChanges menuChange = session.get(MenuChanges.class, id);
-
-        if (menuChange != null) {
-            session.remove(menuChange);
-        }
-
-        transaction.commit();
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-}
-
-/*
- * This method updates the branchID of the specific dish with the id to the new branch
- * @param id - the id of the dish
- * @param branchId - the new branchID for the dish
- * @throws Exception - in case we didn't succeed in updating
- */
-public static void updateBranchForDish(int id, int branchID) {
-    try (Session session = getSessionFactory().openSession()) {
-        Transaction transaction = session.beginTransaction();
-
-        CriteriaBuilder builder = session.getCriteriaBuilder();
-        CriteriaUpdate<Dish> criteriaUpdate = builder.createCriteriaUpdate(Dish.class);
-        Root<Dish> root = criteriaUpdate.from(Dish.class);
-
-        criteriaUpdate.set(root.get("branchID"), branchID);
-        criteriaUpdate.where(builder.equal(root.get("id"), id));
-
-        session.createQuery(criteriaUpdate).executeUpdate();
-        transaction.commit();
-    } catch (Exception e) {
-        System.err.println("Error updating dish branch: " + e.getMessage());
-        e.printStackTrace();
-    }
-}
-
-public static void deleteDish(int id) {
-    try (Session session = getSessionFactory().openSession()) {
-        Transaction transaction = session.beginTransaction();
-        Dish dish = session.get(Dish.class, id);
-
-        if (dish != null) {
-            session.remove(dish);
-        }
-
-        transaction.commit();
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-}
-
-public static Object[] userLogin(String email, String password) {
-    Object[] result = new Object[3];
-    result[0] = false;
-    result[1] = -1;
-
-    try (Session session = getSessionFactory().openSession()) {
-        Transaction transaction = session.beginTransaction();
-
-        CriteriaBuilder builder = session.getCriteriaBuilder();
-        CriteriaQuery<Worker> criteriaQuery = builder.createQuery(Worker.class);
-        Root<Worker> root = criteriaQuery.from(Worker.class);
-        criteriaQuery.select(root).where(
-                builder.equal(root.get("email"), email),
-                builder.equal(root.get("password"), password)
-        );
-
-        Worker worker = session.createQuery(criteriaQuery).uniqueResult();
-
-        if (worker != null && !worker.isLoggedIn()) {
-            CriteriaUpdate<Worker> criteriaUpdate = builder.createCriteriaUpdate(Worker.class);
-            Root<Worker> updateRoot = criteriaUpdate.from(Worker.class);
-            criteriaUpdate.set(updateRoot.get("isLoggedIn"), true);
-            criteriaUpdate.where(builder.equal(updateRoot.get("id"), worker.getId()));
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaUpdate<Dish> criteriaUpdate = builder.createCriteriaUpdate(Dish.class);
+            Root<Dish> root = criteriaUpdate.from(Dish.class);
+            criteriaUpdate.set(root.get("price"), price);
+            criteriaUpdate.set(root.get("isSalePrice"), isSalePrice);
+            criteriaUpdate.set(root.get("salePrice"), salePrice);
+            criteriaUpdate.where(builder.equal(root.get("id"), id));
 
             session.createQuery(criteriaUpdate).executeUpdate();
-            result[0] = true;
-            result[1] = worker.getId();
-            result[2] = worker.getRole();
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
         }
-
-        transaction.commit();
-    } catch (Exception e) {
-        e.printStackTrace();
     }
-    return result;
-}
 
-public static Object[] userLogout(int workerId) {
-    Object[] result = new Object[1];
-    result[0] = false;
+    public static void deleteMenuChange(int id) {
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+            MenuChanges menuChange = session.get(MenuChanges.class, id);
 
-    try (Session session = getSessionFactory().openSession()) {
-        Transaction transaction = session.beginTransaction();
+            if (menuChange != null) {
+                session.remove(menuChange);
+            }
 
-        CriteriaBuilder builder = session.getCriteriaBuilder();
-        CriteriaQuery<Worker> criteriaQuery = builder.createQuery(Worker.class);
-        Root<Worker> root = criteriaQuery.from(Worker.class);
+            transaction.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-        criteriaQuery.select(root).where(builder.equal(root.get("id"), workerId));
-        Worker worker = session.createQuery(criteriaQuery).uniqueResult();
+    /*
+     * This method updates the branchID of the specific dish with the id to the new branch
+     * @param id - the id of the dish
+     * @param branchId - the new branchID for the dish
+     * @throws Exception - in case we didn't succeed in updating
+     */
+    public static void updateBranchForDish(int id, int branchID) {
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
 
-        if (worker != null && worker.isLoggedIn()) {
-            CriteriaUpdate<Worker> criteriaUpdate = builder.createCriteriaUpdate(Worker.class);
-            Root<Worker> updateRoot = criteriaUpdate.from(Worker.class);
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaUpdate<Dish> criteriaUpdate = builder.createCriteriaUpdate(Dish.class);
+            Root<Dish> root = criteriaUpdate.from(Dish.class);
 
-            criteriaUpdate.set(updateRoot.get("isLoggedIn"), false);
-            criteriaUpdate.where(builder.equal(updateRoot.get("id"), worker.getId()));
+            criteriaUpdate.set(root.get("branchID"), branchID);
+            criteriaUpdate.where(builder.equal(root.get("id"), id));
 
             session.createQuery(criteriaUpdate).executeUpdate();
-            result[0] = true;
+            transaction.commit();
+        } catch (Exception e) {
+            System.err.println("Error updating dish branch: " + e.getMessage());
+            e.printStackTrace();
         }
-
-        transaction.commit();
-    } catch (Exception e) {
-        System.err.println("Error logging out user: " + e.getMessage());
-        e.printStackTrace();
     }
-    return result;
-}
 
-public static void userLogoutAll() {
-    try (Session session = getSessionFactory().openSession()) {
-        Transaction transaction = session.beginTransaction();
+    public static void deleteDish(int id) {
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+            Dish dish = session.get(Dish.class, id);
 
-        CriteriaBuilder builder = session.getCriteriaBuilder();
-        CriteriaUpdate<Worker> criteriaUpdate = builder.createCriteriaUpdate(Worker.class);
-        Root<Worker> root = criteriaUpdate.from(Worker.class);
+            if (dish != null) {
+                session.remove(dish);
+            }
 
-        criteriaUpdate.set(root.get("isLoggedIn"), false);
-        session.createQuery(criteriaUpdate).executeUpdate();
-
-        transaction.commit();
-        System.out.println("All workers logged out successfully!");
-    } catch (Exception e) {
-        System.err.println("Error logging out all users: " + e.getMessage());
-        e.printStackTrace();
-    }
-}
-
-public static void handleComplaint(int complaintId, int refund) {
-    Transaction transaction = null;
-    try (Session session = getSessionFactory().openSession()) {
-        transaction = session.beginTransaction();
-
-        // Retrieve the existing complaint
-        Complaint existingComplaint = session.get(Complaint.class, complaintId);
-        if (existingComplaint == null) {
-            System.out.println("Complaint with ID " + complaintId + " does not exist.");
-
+            transaction.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        // Update the status and refund fields
-        existingComplaint.setStatus(1);
-        existingComplaint.setRefund(refund); // Assuming 'refund' exists in Complaint entity
-
-        // Persist the update
-        session.update(existingComplaint);
-        transaction.commit();
-        System.out.println("Complaint with ID " + complaintId + " handled, refunded amount: " + refund);
-
-    } catch (Exception e) {
-        if (transaction != null) {
-            transaction.rollback();
-        }
-        e.printStackTrace();
     }
-}
 
-// auto handle old complaints
-public static boolean autoHandleOldComplaints() {
-    try (Session session = getSessionFactory().openSession()) {
-        Transaction transaction = session.beginTransaction();
+    public static Object[] userLogin(String email, String password) {
+        Object[] result = new Object[3];
+        result[0] = false;
+        result[1] = -1;
 
-        // Get current time minus 24 hours
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.HOUR, -24);
-        Date twentyFourHoursAgo = cal.getTime();
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
 
-        // Find complaints older than 24 hours with status 0 (waiting)
-        CriteriaBuilder builder = session.getCriteriaBuilder();
-        CriteriaUpdate<Complaint> updateQuery = builder.createCriteriaUpdate(Complaint.class);
-        Root<Complaint> root = updateQuery.from(Complaint.class);
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaQuery<Worker> criteriaQuery = builder.createQuery(Worker.class);
+            Root<Worker> root = criteriaQuery.from(Worker.class);
+            criteriaQuery.select(root).where(
+                    builder.equal(root.get("email"), email),
+                    builder.equal(root.get("password"), password)
+            );
 
-        updateQuery.set(root.get("status"), 2); // Change status to 2
-        updateQuery.where(
-                builder.equal(root.get("status"), 0),
-                builder.lessThan(root.get("date"), twentyFourHoursAgo)
-        );
+            Worker worker = session.createQuery(criteriaQuery).uniqueResult();
 
-        int updatedRows = session.createQuery(updateQuery).executeUpdate();
-        transaction.commit();
+            if (worker != null && !worker.isLoggedIn()) {
+                CriteriaUpdate<Worker> criteriaUpdate = builder.createCriteriaUpdate(Worker.class);
+                Root<Worker> updateRoot = criteriaUpdate.from(Worker.class);
+                criteriaUpdate.set(updateRoot.get("isLoggedIn"), true);
+                criteriaUpdate.where(builder.equal(updateRoot.get("id"), worker.getId()));
 
-        if (updatedRows > 0) {
-            System.out.println("Updated " + updatedRows + " complaints to status 2 (auto-handled).");
-            return true;  //  Returns `true` if complaints were updated
+                session.createQuery(criteriaUpdate).executeUpdate();
+                result[0] = true;
+                result[1] = worker.getId();
+                result[2] = worker.getRole();
+            }
+
+            transaction.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-    } catch (Exception e) {
-        System.err.println("Error auto-handling old complaints: " + e.getMessage());
-        e.printStackTrace();
+        return result;
     }
-    return false; // Returns `false` if no complaints were updated
-}
-//    private static <T> List<T> getAllEntities(Class<T> entityClass) throws Exception {
-//        CriteriaBuilder builder = session.getCriteriaBuilder();
-//        CriteriaQuery<T> query = builder.createQuery(entityClass);
-//        query.from(entityClass);
-//        List<T> data = session.createQuery(query).getResultList();
-//        return data;
-//    }
 
-//    private static void printAllBranches(Session session) throws Exception {
-//        List<RestaurantBranch> branches = getAllEntities(RestaurantBranch.class);
-//        for (RestaurantBranch branch : branches) {
-//            System.out.print(branch.getId() + ". Branch '" + branch.getBranchName() + "', in '" + branch.getLocation() + "'.\n");
-//            System.out.print("     Menu:\n");
-//            List<Dish> dishes = branch.getAllDishesInBranch(session);
-//            for (Dish dish : dishes) {
-//                System.out.print("     [" + dish.getId() + "]:   " + dish.getPrice() + "$   " + dish.getName() + "  --  " + dish.getDescription() + "\n");
-//            }
-//        }
-//    }
+    public static Object[] userLogout(int workerId) {
+        Object[] result = new Object[1];
+        result[0] = false;
+
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaQuery<Worker> criteriaQuery = builder.createQuery(Worker.class);
+            Root<Worker> root = criteriaQuery.from(Worker.class);
+
+            criteriaQuery.select(root).where(builder.equal(root.get("id"), workerId));
+            Worker worker = session.createQuery(criteriaQuery).uniqueResult();
+
+            if (worker != null && worker.isLoggedIn()) {
+                CriteriaUpdate<Worker> criteriaUpdate = builder.createCriteriaUpdate(Worker.class);
+                Root<Worker> updateRoot = criteriaUpdate.from(Worker.class);
+
+                criteriaUpdate.set(updateRoot.get("isLoggedIn"), false);
+                criteriaUpdate.where(builder.equal(updateRoot.get("id"), worker.getId()));
+
+                session.createQuery(criteriaUpdate).executeUpdate();
+                result[0] = true;
+            }
+
+            transaction.commit();
+        } catch (Exception e) {
+            System.err.println("Error logging out user: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static void userLogoutAll() {
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaUpdate<Worker> criteriaUpdate = builder.createCriteriaUpdate(Worker.class);
+            Root<Worker> root = criteriaUpdate.from(Worker.class);
+
+            criteriaUpdate.set(root.get("isLoggedIn"), false);
+            session.createQuery(criteriaUpdate).executeUpdate();
+
+            transaction.commit();
+            System.out.println("All workers logged out successfully!");
+        } catch (Exception e) {
+            System.err.println("Error logging out all users: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void handleComplaint(int complaintId, int refund) {
+        Transaction transaction = null;
+        try (Session session = getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+
+            // Retrieve the existing complaint
+            Complaint existingComplaint = session.get(Complaint.class, complaintId);
+            if (existingComplaint == null) {
+                System.out.println("Complaint with ID " + complaintId + " does not exist.");
+
+            }
+
+            // Update the status and refund fields
+            existingComplaint.setStatus(1);
+            existingComplaint.setRefund(refund); // Assuming 'refund' exists in Complaint entity
+
+            // Persist the update
+            session.update(existingComplaint);
+            transaction.commit();
+            System.out.println("Complaint with ID " + complaintId + " handled, refunded amount: " + refund);
+
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
+        }
+    }
+
+    // auto handle old complaints
+    public static boolean autoHandleOldComplaints() {
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            // Get current time minus 24 hours
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.HOUR, -24);
+            Date twentyFourHoursAgo = cal.getTime();
+
+            // Find complaints older than 24 hours with status 0 (waiting)
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaUpdate<Complaint> updateQuery = builder.createCriteriaUpdate(Complaint.class);
+            Root<Complaint> root = updateQuery.from(Complaint.class);
+
+            updateQuery.set(root.get("status"), 2); // Change status to 2
+            updateQuery.where(
+                    builder.equal(root.get("status"), 0),
+                    builder.lessThan(root.get("date"), twentyFourHoursAgo)
+            );
+
+            int updatedRows = session.createQuery(updateQuery).executeUpdate();
+            transaction.commit();
+
+            if (updatedRows > 0) {
+                System.out.println("Updated " + updatedRows + " complaints to status 2 (auto-handled).");
+                return true;  //  Returns `true` if complaints were updated
+            }
+        } catch (Exception e) {
+            System.err.println("Error auto-handling old complaints: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false; // Returns `false` if no complaints were updated
+    }
+    //    private static <T> List<T> getAllEntities(Class<T> entityClass) throws Exception {
+    //        CriteriaBuilder builder = session.getCriteriaBuilder();
+    //        CriteriaQuery<T> query = builder.createQuery(entityClass);
+    //        query.from(entityClass);
+    //        List<T> data = session.createQuery(query).getResultList();
+    //        return data;
+    //    }
+
+    //    private static void printAllBranches(Session session) throws Exception {
+    //        List<RestaurantBranch> branches = getAllEntities(RestaurantBranch.class);
+    //        for (RestaurantBranch branch : branches) {
+    //            System.out.print(branch.getId() + ". Branch '" + branch.getBranchName() + "', in '" + branch.getLocation() + "'.\n");
+    //            System.out.print("     Menu:\n");
+    //            List<Dish> dishes = branch.getAllDishesInBranch(session);
+    //            for (Dish dish : dishes) {
+    //                System.out.print("     [" + dish.getId() + "]:   " + dish.getPrice() + "$   " + dish.getName() + "  --  " + dish.getDescription() + "\n");
+    //            }
+    //        }
+    //    }
 }

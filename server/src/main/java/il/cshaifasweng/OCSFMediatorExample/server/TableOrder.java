@@ -30,13 +30,13 @@ public class TableOrder {
     private String date;
 
     @Column(nullable = false)
-    private String time;
+    private String time; // (starting time) till an hour and a half after
 
     @Column(nullable = false)
     private String location;
 
     @Column(nullable = false)
-    private int status; // 0=Pending, 1=Free-Canceled, 2=Partly-Refund, 3=No refund, 4=Completed
+    private int status; // 0=Pending/Completed, 1=Free Canceled, 2= Paid Canceled
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
