@@ -20,7 +20,7 @@
 <AnchorPane prefHeight="500" prefWidth="600" style="-fx-background-color: #ffffff;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="il.cshaifasweng.OCSFMediatorExample.client.BuyerDetailsFormController">
 
     <!-- Title -->
-    <Label fx:id="headlineText" style="-fx-font-size: 20; -fx-font-weight: bold;" text="Buyer Form" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0" />
+    <Label fx:id="header" style="-fx-font-size: 20; -fx-font-weight: bold;" text="Buyer Form" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0" />
 
     <!-- PERSONAL INFO LABEL -->
     <Label style="-fx-font-size: 16; -fx-font-weight: bold;" text="Personal Info" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="70.0" />

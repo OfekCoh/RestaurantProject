@@ -9,9 +9,10 @@ import org.hibernate.service.ServiceRegistry;
 import javax.persistence.criteria.*;
 import java.io.InputStream;
 import java.util.*;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 import static il.cshaifasweng.OCSFMediatorExample.server.Convertor.*;
-
 
 public class DatabaseServer {
     public static String password;
@@ -37,7 +38,6 @@ public class DatabaseServer {
         }
     }
 
-
     private static SessionFactory getSessionFactory() throws HibernateException {
         if (sessionFactory == null) {
             Configuration configuration = new Configuration();
@@ -60,7 +60,6 @@ public class DatabaseServer {
         }
         return sessionFactory;
     }
-
 
     private static void createDatabase(Session session) throws Exception {
         /**
@@ -183,6 +182,7 @@ public class DatabaseServer {
 
     }
 
+
     public static boolean addComplaint(Complaint complaint) {
         try (Session session = getSessionFactory().openSession()) {
             Transaction transaction = session.beginTransaction();
@@ -203,8 +203,6 @@ public class DatabaseServer {
             return false;
         }
     }
-
-
 
     /**
      * This function encodes images to base64 for the database creation, for starter images
@@ -238,6 +236,17 @@ public class DatabaseServer {
         }
 
         return branches;
+    }
+
+    public static List<BranchEnt> getBranches() {
+        try (Session session = getSessionFactory().openSession()) {
+            List<RestaurantBranch> allBranches = getAllBranches(session);
+            return convertToBranchEntList(allBranches);
+        } catch (Exception e) {
+            System.err.println("Error fetching branches: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
     }
 
     public static List<MenuChanges> getAllMenuChanges(Session session) throws Exception {
@@ -275,14 +284,38 @@ public class DatabaseServer {
         }
     }
 
-
-
-    public static List<BranchEnt> getBranches() {
+    public static List<TableSchema> getAllTables() throws Exception {
         try (Session session = getSessionFactory().openSession()) {
-            List<RestaurantBranch> allBranches = getAllBranches(session);
-            return convertToBranchEntList(allBranches);
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaQuery<TableSchema> query = builder.createQuery(TableSchema.class);
+            Root<TableSchema> root = query.from(TableSchema.class);
+
+            query.select(root).distinct(true); // Ensure distinct branches
+            return session.createQuery(query).getResultList();
+
         } catch (Exception e) {
-            System.err.println("Error fetching branches: " + e.getMessage());
+            System.err.println("Error fetching tables: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    public static List<TableSchema> getTablesWithIds(List<Integer> tableIds) throws Exception {
+        if (tableIds == null || tableIds.isEmpty()) {
+            System.out.println("DatabaseServer.getTableWithIds- input is null or empty");
+            return Collections.emptyList();
+        }
+
+        try (Session session = getSessionFactory().openSession()) {
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaQuery<TableSchema> query = builder.createQuery(TableSchema.class);
+            Root<TableSchema> root = query.from(TableSchema.class);
+
+            query.select(root).where(root.get("tableId").in(tableIds)).distinct(true);
+            return session.createQuery(query).getResultList();
+
+        } catch (Exception e) {
+            System.err.println("Error fetching tables: " + e.getMessage());
             e.printStackTrace();
             return Collections.emptyList();
         }
@@ -299,7 +332,6 @@ public class DatabaseServer {
             return Collections.emptyList();
         }
     }
-
 
     public static List<Dish> getAllDishes(Session session) {
         // now we accept a session parameter
@@ -319,7 +351,6 @@ public class DatabaseServer {
             return Collections.emptyList();
         }
     }
-
 
     public static boolean addMenuChange(MenuChanges newMenuChanges) {
         try (Session session = getSessionFactory().openSession()) {
@@ -342,7 +373,8 @@ public class DatabaseServer {
         }
     }
 
-    public static int addOrder(Order newOrder) {
+    // T can be Order or TableOrder
+    public static <T> int addOrder(T newOrder) {
         int orderId = -1;
         try (Session session = getSessionFactory().openSession()) {
             Transaction transaction = session.beginTransaction();
@@ -363,6 +395,24 @@ public class DatabaseServer {
             return orderId;
         }
     }
+
+    public static int addTableOrder(TableOrder newOrder) throws Exception{
+        // if its host order there's no risk in losing your seats to other clients
+        WhoSubmittedBy whoSubmitted= newOrder.getWhoSubmitted();
+        if (whoSubmitted == WhoSubmittedBy.HOSTESS) return addOrder(newOrder);
+
+        // will check if there are still available tables (and other client didn't submit them)
+        List<Integer> availableTablesIds= checkAvailableTables(newOrder.getBranchId(), newOrder.getDate(), newOrder.getTime(), newOrder.getNumberOfGuests(), newOrder.getLocation());
+        List<TableSchema> tables= getTablesWithIds(availableTablesIds);
+        System.out.println("new availableTablesIds: " + availableTablesIds); // just to check in case the tables have been changed
+
+        // if there's no more room return -2, otherwise update the tables in the order and add to database
+        if(tables.isEmpty()) return -2;
+        else newOrder.setTables(tables);
+
+        return addOrder(newOrder);
+    }
+
 
     public static Object[] cancelOrder(int orderId, String phoneNumber) {
         int newStatus = -1;
@@ -427,6 +477,140 @@ public class DatabaseServer {
         }
     }
 
+    public static List<Integer> checkAvailableTables(int branchId, String date, String time, int numberOfDiners, String location) {
+        List<Integer> availableTables = new ArrayList<>();
+        List<Integer> numberOfDinersList = new ArrayList<>();  // the indexes will match between the table id and its size
+
+        // for an order at time 10:00 we will check the table is not reserved for 8:45-11:15
+        LocalTime requestedTime = LocalTime.parse(time); // "HH:mm" format
+        LocalTime startTime = requestedTime.minusMinutes(75);
+        LocalTime endTime = requestedTime.plusMinutes(75);
+
+        // Format time for SQL consistency
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+        String startTimeStr = startTime.format(formatter);
+        String endTimeStr = endTime.format(formatter);
+
+        try (Session session = getSessionFactory().openSession()) {
+            // Query to find tables that match the criteria and are NOT in a conflicting order
+            String queryStr = """
+            SELECT t.tableId FROM TableSchema t
+            WHERE t.branch.id = :branchId
+            AND t.location = :location
+            AND t.tableId NOT IN (
+                SELECT t2.tableId FROM TableOrder o
+                JOIN o.tables t2
+                WHERE o.branchId = :branchId
+                AND o.date = :date
+                AND o.location = :location
+                AND o.time BETWEEN :startTime AND :endTime
+            )
+            ORDER BY t.numberOfDiners ASC
+            """;
+
+            // Create a query and set parameters
+            Query<Integer> query = session.createQuery(queryStr, Integer.class);
+            query.setParameter("branchId", branchId);
+            query.setParameter("location", LocationType.valueOf(location));
+            query.setParameter("date", date);
+            query.setParameter("startTime", startTimeStr);
+            query.setParameter("endTime", endTimeStr);
+
+            // Execute the query and store the result in availableTables
+            availableTables = query.getResultList();
+
+            // For every table in the list add its size to numberOfDinersList
+            for (Integer tableId : availableTables) {
+                TableSchema table = session.get(TableSchema.class, tableId);
+                if(table!=null) numberOfDinersList.add(table.getNumberOfDiners());
+                else throw new RuntimeException("checkAvailableTables: A table with id " + tableId + " not found");
+            }
+
+            return getMinTablesNeeded(availableTables, numberOfDinersList, numberOfDiners); // Return the list of available tables
+
+        } catch (Exception e) {
+            System.err.println("Error fetching tables: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    public static List<Integer> getMinTablesNeeded(List<Integer> tables_id, List<Integer> tables_num, int diners) {
+    // we could make it work with more general table sizes but work explicitly said only 3 given sizes.
+        List<Integer> minTablesNeeded = new ArrayList<>(); // the returned list
+        // A list of ids of each size table, just for a simpler code.
+        List<Integer> ids_with_two = new ArrayList<>();
+        List<Integer> ids_with_three = new ArrayList<>();
+        List<Integer> ids_with_four = new ArrayList<>();
+
+        // fill the lists
+        for(int i=0; i<tables_num.size(); i++) {
+            int tableSize = tables_num.get(i); // Get the number of diners for this table
+            if (tableSize==2) ids_with_two.add(tables_id.get(i));
+            else if (tableSize==3) ids_with_three.add(tables_id.get(i));
+            else if(tableSize==4) ids_with_four.add(tables_id.get(i));
+        }
+
+        // loop to add tables until all diners are seated
+        while(diners>0) {
+            if (diners<=2) { // try to add the smallest
+                if (!ids_with_two.isEmpty()) {
+                    minTablesNeeded.add(ids_with_two.remove(0)); // Pick a table of 2
+                    diners -= 2;
+                    continue;
+                }
+                if (!ids_with_three.isEmpty()) {
+                    minTablesNeeded.add(ids_with_three.remove(0)); // Pick a table of 3
+                    diners -= 3;
+                    continue;
+                }
+                if (!ids_with_four.isEmpty()) {
+                    minTablesNeeded.add(ids_with_four.remove(0)); // Pick a table of 4
+                    diners -= 4;
+                    continue;
+                }
+            }
+
+            else if (diners==3) { // order to try is 3 4 2
+                if (!ids_with_three.isEmpty()) {
+                    minTablesNeeded.add(ids_with_three.remove(0)); // Pick a table of 3
+                    diners -= 3;
+                    continue;
+                }
+                if (!ids_with_four.isEmpty()) {
+                    minTablesNeeded.add(ids_with_four.remove(0)); // Pick a table of 4
+                    diners -= 4;
+                    continue;
+                }
+                if (!ids_with_two.isEmpty()) {
+                    minTablesNeeded.add(ids_with_two.remove(0)); // Pick a table of 2
+                    diners -= 2;
+                    continue;
+                }
+            }
+
+            else if (diners>=4) { // order to try is 4 3 2   (if its exactly 4 and there's no table of 4 we can try to get 2 tables of 2)
+                if (!ids_with_four.isEmpty()) {
+                    minTablesNeeded.add(ids_with_four.remove(0)); // Pick a table of 4
+                    diners -= 4;
+                    continue;
+                }
+                if (!ids_with_three.isEmpty()) {
+                    minTablesNeeded.add(ids_with_three.remove(0)); // Pick a table of 3
+                    diners -= 3;
+                    continue;
+                }
+                if (!ids_with_two.isEmpty()) {
+                    minTablesNeeded.add(ids_with_two.remove(0)); // Pick a table of 2
+                    diners -= 2;
+                    continue;
+                }
+            }
+
+            return Collections.emptyList(); // No more tables available so we cant fill the order
+        }
+        return minTablesNeeded;
+    }
 
     public static boolean addDish(Dish newDish) {
         try (Session session = getSessionFactory().openSession()) {
@@ -485,7 +669,6 @@ public class DatabaseServer {
         }
     }
 
-
     /*
      * This method updates the price of the specific dish with the id to the new price
      * @param id - the id of the dish
@@ -530,7 +713,6 @@ public class DatabaseServer {
         }
     }
 
-
     /*
      * This method updates the branchID of the specific dish with the id to the new branch
      * @param id - the id of the dish
@@ -570,7 +752,6 @@ public class DatabaseServer {
             e.printStackTrace();
         }
     }
-
 
     public static Object[] userLogin(String email, String password) {
         Object[] result = new Object[4];
@@ -614,7 +795,6 @@ public class DatabaseServer {
         return result;
     }
 
-
     public static Object[] userLogout(int workerId) {
         Object[] result = new Object[1];
         result[0] = false;
@@ -647,7 +827,6 @@ public class DatabaseServer {
         }
         return result;
     }
-
 
     public static void userLogoutAll() {
         try (Session session = getSessionFactory().openSession()) {

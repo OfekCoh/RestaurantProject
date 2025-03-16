@@ -1,12 +1,13 @@
 package il.cshaifasweng.OCSFMediatorExample.server;
 
-
 import il.cshaifasweng.OCSFMediatorExample.entities.*;
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.AbstractServer;
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.ConnectionToClient;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -14,7 +15,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.SubscribedClient;
-
 
 public class SimpleServer extends AbstractServer {
     private static ArrayList<SubscribedClient> SubscribersList = new ArrayList<>();
@@ -97,6 +97,7 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
+
                 case "get menuChanges": {
                     try {
                         List<MenuChangeEnt> menuChanges = DatabaseServer.getMenuChanges();
@@ -109,6 +110,7 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
+
                 case "add menuChanges": {
                     if (payload.length == 7) {
                         int dishId = (int) payload[0];
@@ -153,6 +155,7 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
+
                 case "set menuChanges": {
                     if (payload.length == 6) {
                         int menuChangeID = (int) payload[0];
@@ -328,6 +331,7 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
+
                 case "update dish": {
                     // Expect payload in the order:
                     // [int dishId, String name, String description,
@@ -389,6 +393,7 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
+
                 case "add order": {
                     if (payload.length == 14) {
                         try {
@@ -446,6 +451,7 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
+
                 case "cancel order": {
                     if (payload.length == 2) {
                         try {
@@ -478,6 +484,101 @@ public class SimpleServer extends AbstractServer {
                     }
                     break;
                 }
+
+                case "check tables": {
+                    if (payload.length == 5) {
+                        try {
+                            int branchId = (int) payload[0];
+                            String date = (String) payload[1];
+                            String time = (String) payload[2];
+                            int numberOfGuests = (int) payload[3];
+                            String location = (String) payload[4];
+
+                            // print to console
+                            System.out.println("Received table check request: Branch=" + branchId + ", Date=" + date + ", Time=" + time + ", Guests=" + numberOfGuests + ", Location=" + location);
+
+                            List<Integer> availableTablesIds = DatabaseServer.checkAvailableTables(branchId, date, time, numberOfGuests, location);
+                            if(availableTablesIds != null) System.out.println("availableTablesIds: " + availableTablesIds);
+
+                            // Send response back to client
+                            Message response = new Message("availableTables response", new Object[]{availableTablesIds});
+                            client.sendToClient(response);
+                        }
+                        catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    break;
+                }
+
+                case "add table order":{
+                    if (payload.length == 14) {
+                        try{
+                            List<Integer> availableTablesIds = (List<Integer>) payload[0];
+                            int branchId = (int) payload[1];
+                            String date = (String) payload[2];
+                            String time = (String) payload[3];
+                            int numberOfGuests = (int) payload[4];
+                            String location = (String) payload[5];
+
+                            String name = (String) payload[6];
+                            String address = (String) payload[7];
+                            String phone = (String) payload[8];
+                            String userId = (String) payload[9];
+                            String cardNum = (String) payload[10];
+                            int cardMonth = (int) payload[11];
+                            int cardYear = (int) payload[12];
+                            String cvv = (String) payload[13];
+
+                            // needed if is ordered online or in place by the host
+                            boolean buyerDetailsNeeded = !name.equals("-");
+                            BuyerDetails buyerDetails = new BuyerDetails(name, address, phone, userId, cardNum, cardMonth, cardYear, cvv); // Create BuyerDetails with buyer's info.
+
+                            // if for some reason input didn't pass right
+                            if (availableTablesIds == null || availableTablesIds.isEmpty()) {
+                                System.out.println("SimpleServer: availableTablesIds is null or empty.");
+                                throw new Exception("Pleas try again.");
+                            }
+
+                            // get the tables by their ids
+                            List<TableSchema> tables= DatabaseServer.getTablesWithIds(availableTablesIds);
+
+                            // if there was an error retrieving the tables
+                            if (tables == null || tables.isEmpty()) {
+                                System.out.println("SimpleServer: tables list is null or empty.");
+                                throw new Exception("Pleas try again.");
+                            }
+
+                            TableOrder tableOrder= new TableOrder(branchId, tables, date, time, numberOfGuests, location, 0, buyerDetailsNeeded, buyerDetails);
+                            int orderId = DatabaseServer.addTableOrder(tableOrder); // return the id of the new order. -1 if failed, -2 if the tables were taken by other client
+
+                            if (orderId != -1 && orderId != -2) { // success
+                                System.out.println("Added table order with id: " + orderId);
+                                Message response = new Message("TableOrderResponse", new Object[]{orderId});
+                                client.sendToClient(response);
+
+                            } else if(orderId == -1){  // fail to save to database
+                                Warning failMsg = new Warning("Failed to add order! Please try again.");
+                                client.sendToClient(failMsg);
+                            }
+                            else {  // orderId=-2  there's no more room
+                                Message response = new Message("Tables were stolen", new Object[]{});
+                                client.sendToClient(response);
+                            }
+
+                        } catch (Exception e) {
+                            try {
+                                Warning failMsg = new Warning("Error, Failed to add order: " + e.getMessage());
+                                client.sendToClient(failMsg);
+                            } catch (IOException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    break;
+                }
+
 
                 // -----------------------------------------------------------
                 // login
@@ -640,9 +741,6 @@ public class SimpleServer extends AbstractServer {
                     }
 
                 }
-
-
-
 
                 // -----------------------------------------------------------
                 // Unrecognized command
