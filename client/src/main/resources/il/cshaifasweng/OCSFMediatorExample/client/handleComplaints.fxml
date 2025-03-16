@@ -5,13 +5,14 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane prefHeight="734.0" prefWidth="1147.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/23.0.1" fx:controller="il.cshaifasweng.OCSFMediatorExample.client.HandleComplaintsController">
+<AnchorPane prefHeight="734.0" prefWidth="1264.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="il.cshaifasweng.OCSFMediatorExample.client.HandleComplaintsController">
     <children>
-        <TableView fx:id="complaintsTable" prefHeight="676.0" prefWidth="1141.0">
+        <TableView fx:id="complaintsTable" prefHeight="676.0" prefWidth="1264.0">
             <columns>
                 <TableColumn fx:id="idColumn" prefWidth="50" text="ID" />
                 <TableColumn fx:id="nameColumn" prefWidth="136.0" text="Customer Name" />
-                <TableColumn fx:id="dateColumn" prefWidth="114.0" text="Date" />
+                <TableColumn fx:id="timeRemainingColumn" prefWidth="120.0" text="Time Remaining" />
+                <TableColumn fx:id="branchNameColumn" prefWidth="120.0" text="Branch" />
                 <TableColumn fx:id="complaintColumn" prefWidth="550.0" text="Complaint" />
                 <TableColumn fx:id="actionColumn" minWidth="0.0" prefWidth="290.0" text="Actions" />
             </columns>

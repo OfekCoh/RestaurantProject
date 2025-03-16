@@ -10,9 +10,6 @@ import javafx.scene.layout.HBox;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -121,10 +118,9 @@ public class CartController {
                 OrderManage.setFinalPrice(totalPrice);
                 System.out.println("FinalPrice: " + OrderManage.getFinalPrice());
 
-                // Pass to the form who called him, these 5 lines replace App.setRoot("buyerForm")
-                // if its a worker (host) adding the branch it shouldnt go to payment.
-                BuyerDetailsFormController.setCallerType("cart");
+                BuyerDetailsFormController.setCallerType("cart");  // Pass caller "cart" to buyerform
                 App.setRoot("buyerForm");
+
             } else {
                 Alert alert = new Alert(Alert.AlertType.INFORMATION,
                         String.format("Message: %s\n",

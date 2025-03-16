@@ -48,8 +48,8 @@ public class PrimaryController {
 
     //הכנת דוחות
     @FXML
-    void makeReport(ActionEvent event) {
-
+    void makeReport(ActionEvent event) throws IOException {
+        App.setRoot("chooseReport");
     }
 
     @FXML

@@ -146,7 +146,7 @@ public class SelectDeliveryLocationController {
             }
         }
 
-        // Generate 30-minute time slots from startTime until at least 30 minutes before closing.
+        // Generate 15-minute time slots from startTime until at least 30 minutes before closing.
         List<String> timeSlots = new ArrayList<>();
         LocalTime slot = startTime;
         while (!slot.isAfter(closeTime.minusMinutes(30))) {

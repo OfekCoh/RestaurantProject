@@ -3,14 +3,18 @@ package il.cshaifasweng.OCSFMediatorExample.client;
 import il.cshaifasweng.OCSFMediatorExample.client.Events.*;
 import il.cshaifasweng.OCSFMediatorExample.entities.*;
 import javafx.application.Platform;
+import javafx.scene.control.Alert;
 import org.greenrobot.eventbus.EventBus;
 
 import il.cshaifasweng.OCSFMediatorExample.client.ocsf.AbstractClient;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+
 
 public class SimpleClient extends AbstractClient {
 
@@ -21,11 +25,11 @@ public class SimpleClient extends AbstractClient {
     public static List<BranchEnt> BranchList;
     public static int userID = -1;
     public static int ruleID = -1;
+    public static List<Integer> userBranchesIdList = new ArrayList<Integer>();// the branches the user works at
 
     private SimpleClient(String host, int port) {
         super(host, port);
     }
-
 
     @Override
     protected void handleMessageFromServer(Object msg) {
@@ -42,14 +46,20 @@ public class SimpleClient extends AbstractClient {
                     // payload[0] = boolean success
                     // payload[1] = int workerId
                     boolean success = (boolean) payload[0];
-
                     if (success) {
                         int workerId = (int) payload[1];
                         int rule = (int) payload[2];
-
+                        List<Integer> userBranchesId = (List<Integer>) payload[3];
                         //Setting the local rules.
                         userID = workerId;
                         ruleID = rule;
+                        if(ruleID == 4){// CEO has access to all of the branches
+                            userBranchesIdList = BranchList.stream() .map(BranchEnt::getId).toList(); // get all branches id to userbranchesID
+
+                        }else{
+                            userBranchesIdList = userBranchesId;
+                        }
+
                         System.out.println("Client: Login success! Worker ID = " + workerId + " Rule ID = " + rule);
                         EventBus.getDefault().post(new WarningEvent(new Warning("Login Success!")));
                         EventBus.getDefault().post(new LoginEvent(workerId, rule));
@@ -77,6 +87,7 @@ public class SimpleClient extends AbstractClient {
                     }
                     break;
                 }
+
                 case "menuResponse": {
                     System.out.println("Client: Menu success!");
                     //TODO RETURN also branches in payload 0. also return array list of list dish for each branch.
@@ -111,12 +122,14 @@ public class SimpleClient extends AbstractClient {
                     EventBus.getDefault().post(new BranchEvent(BranchList));
                     break;
                 }
+
                 case "menuChange": {
                     List<MenuChangeEnt> menuChangeList = (List<MenuChangeEnt>) payload[0];
                     System.out.println("Received menuChange with " + menuChangeList.size() + " dishes.");
                     EventBus.getDefault().post(new MenuChangeEvent(menuChangeList));
                     break;
                 }
+
                 case "orderResponse": {
                     System.out.println("Client: Order success!");
                     System.out.println("Received orderResponse with " + payload[0] + " ID.");
@@ -138,6 +151,27 @@ public class SimpleClient extends AbstractClient {
                     break;
                 }
 
+                case "TableOrderResponse": {
+                    System.out.println("Order success! order id is: " + payload[0]);
+                    Platform.runLater(() -> {
+                        try {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION, ("Date: " + TableOrderManage.getDate() + " at " + TableOrderManage.getTime()) +
+                                    "\n\nA reservation lasts for 90 minutes or until closing time (whichever comes first)." +
+                                    "\n\nPlease note: order number required for cancellation" +
+                                    "\n\nSee you then!");
+                            alert.setHeaderText("Order #" + payload[0] + " Completed!");
+                            alert.setTitle("Order Info");
+                            alert.show();
+                            TableOrderManage.resetFields();
+                            App.setRoot("primary");
+
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    break;
+                }
+
                 case "complaints response": {
                     List<ComplaintEnt> complaints = (List<ComplaintEnt>) payload[0];
                     EventBus.getDefault().post(new ComplaintEvent(complaints));
@@ -145,7 +179,83 @@ public class SimpleClient extends AbstractClient {
                     break;
                 }
 
+                case "branch report response":{
+                    BranchReportEnt branchReport = (BranchReportEnt) payload[0];
+                    EventBus.getDefault().post(new BranchReportEvent(branchReport));
+                    System.out.println("received branch report ");
+                    break;
+                }
+                case "availableTables response": {
+                    List<Integer> availableTablesIds = (List<Integer>) payload[0];
 
+                    if(availableTablesIds == null) {  // must've been an error. try again
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.ERROR, ("Something went wrong! Please try again."));
+                            alert.show();
+                        });
+                        break;
+                    }
+
+                    // TODO offer other options or branch
+                    else if(availableTablesIds.isEmpty()) {  // no seats at this time
+
+                        //
+                        //   add your code here
+                        //
+
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Please try a different time or branch.");
+                            alert.setHeaderText("There are no free tables!");
+                            alert.show();
+                        });
+                        break;
+                    }
+
+                    // there are seats
+                    System.out.println("SimpleClient.response: availableTablesIds = " + availableTablesIds);
+                    TableOrderManage.setAvailableTablesIds(availableTablesIds); // add tables to the order
+
+                    try {
+                        if(SimpleClient.userID != -1) {   // it's a worker
+
+                            // add this order to the database. buyer details don't matter
+                            sendAddTableOrder("-", "-", "-", "-", "-", -1, -1, "-");
+                        }
+                        else {  // it's a costumer
+                            BuyerDetailsFormController.setCallerType("orderTable");  // Pass caller "cart" to buyerform
+
+                            Platform.runLater(() -> {
+                                try {
+                                    App.setRoot("buyerForm");  // Switch to the buyer form scene
+                                } catch (IOException e) {
+                                    e.printStackTrace();  // Handle potential IOException if App.setRoot throws an exception
+                                }
+                            });
+                        }
+                    }
+                    catch (Exception e) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR, ("Something went wrong! Please try again."));
+                        alert.show();
+                    }
+                    break;
+                }
+
+                case "Tables were stolen": {
+                    System.out.println("Tables were stolen");
+                    Platform.runLater(() -> {
+                        try {
+                            Alert alert = new Alert(Alert.AlertType.ERROR, ("Please try a different time or branch."));
+                            alert.setHeaderText("There are no free tables!");
+                            alert.show();
+                            TableOrderManage.resetFields();
+                            App.setRoot("orderTable");
+
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    break;
+                }
                 // If you want server to respond with a "menuResponse" message, do it here
                 // case "menuResponse": { ... } break;
 
@@ -245,6 +355,29 @@ public class SimpleClient extends AbstractClient {
     public void sendCancelOrder(int orderId, String phoneNum) throws IOException {
         Message message = new Message("cancel order", new Object[]{orderId,phoneNum});
         sendToServer(message);
+
+    }
+
+    public void sendCheckTables() throws IOException {
+        Message message = new Message("check tables", new Object[]{
+                TableOrderManage.getBranchId(),
+                TableOrderManage.getDate(),
+                TableOrderManage.getTime(),
+                TableOrderManage.getNumberOfGuests(),
+                TableOrderManage.getLocation()});
+        sendToServer(message);
+    }
+
+    public void sendAddTableOrder(String name, String address, String phone, String userID, String cardNumber, Integer month,Integer  year, String cvv) throws IOException {
+        Message message = new Message("add table order", new Object[]{
+                TableOrderManage.getAvailableTablesIds(),
+                TableOrderManage.getBranchId(),
+                TableOrderManage.getDate(),
+                TableOrderManage.getTime(),
+                TableOrderManage.getNumberOfGuests(),
+                TableOrderManage.getLocation(),
+                name, address, phone, userID, cardNumber, month, year, cvv});
+        sendToServer(message);
     }
 
     public void sendLoginCommand(String email, String password) throws Exception {
@@ -258,8 +391,8 @@ public class SimpleClient extends AbstractClient {
     }
 
     // need to add buyer details?
-    public void sendComplaint(String complaintText, Date date, String name, String address, String phone, String userID, String cardNumber, Integer month,Integer  year, String cvv) throws IOException {
-        Message message = new Message("complaint", new Object[]{complaintText, date, name, address, phone, userID, cardNumber, month, year, cvv});
+    public void sendComplaint(String complaintText, Date date, int branchId, String name, String address, String phone, String userID, String cardNumber, Integer month,Integer  year, String cvv, String email) throws IOException {
+        Message message = new Message("complaint", new Object[]{complaintText, date, branchId, name, address, phone, userID, cardNumber, month, year, cvv, email});
         sendToServer(message);
     }
     public static SimpleClient getClient() {
@@ -273,9 +406,15 @@ public class SimpleClient extends AbstractClient {
         Message message = new Message("get complaints", new Object[]{});
         sendToServer(message);
     }
-    public void sendHandleComplaint(int complaintID, int refund) throws Exception {
+    public void sendHandleComplaint(int complaintID, double refund) throws Exception {
         Message message = new Message("handle complaint", new Object[]{complaintID, refund});
         sendToServer(message);
     }
+
+    public void sendGetBranchReport(int year, int month, int branchID) throws Exception {
+        Message message = new Message("get branch report", new Object[]{year, month, branchID});
+        sendToServer(message);
+    }
+
 
 }
