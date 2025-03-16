@@ -4,17 +4,13 @@ import il.cshaifasweng.OCSFMediatorExample.entities.BranchEnt;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
+
 import javafx.scene.control.Alert;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Button;
 import javafx.scene.control.DateCell;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.ListCell;
-
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 
 import java.io.IOException;
 import java.util.stream.IntStream;
@@ -242,7 +238,8 @@ public class OrderTableController {
         // or ask to change to a different branch with same parameters
 
         // if its a worker (host) adding the branch it shouldnt go to payment.
-        BuyerDetailsFormController.setCallerType("orderTable");
+
+        BuyerDetailsFormController.setCallerType("orderTable");  // Pass caller "cart" to buyerform
         App.setRoot("buyerForm");
     }
 
