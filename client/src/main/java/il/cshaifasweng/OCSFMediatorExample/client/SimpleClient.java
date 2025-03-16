@@ -154,6 +154,7 @@ public class SimpleClient extends AbstractClient {
                             alert.setHeaderText("Order #" + payload[0] + " Completed!");
                             alert.setTitle("Order Info");
                             alert.show();
+                            TableOrderManage.resetFields();
                             App.setRoot("primary");
 
                         } catch (IOException e) {
@@ -225,6 +226,22 @@ public class SimpleClient extends AbstractClient {
                     break;
                 }
 
+                case "Tables were stolen": {
+                    System.out.println("Tables were stolen");
+                    Platform.runLater(() -> {
+                        try {
+                            Alert alert = new Alert(Alert.AlertType.ERROR, ("Please try a different time or branch."));
+                            alert.setHeaderText("There are no free tables!");
+                            alert.show();
+                            TableOrderManage.resetFields();
+                            App.setRoot("orderTable");
+
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    break;
+                }
                 // If you want server to respond with a "menuResponse" message, do it here
                 // case "menuResponse": { ... } break;
 

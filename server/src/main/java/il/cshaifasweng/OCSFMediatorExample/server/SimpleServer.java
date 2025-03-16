@@ -547,19 +547,23 @@ public class SimpleServer extends AbstractServer {
                             if (tables == null || tables.isEmpty()) {
                                 System.out.println("SimpleServer: tables list is null or empty.");
                                 throw new Exception("Pleas try again.");
-
                             }
 
                             TableOrder tableOrder= new TableOrder(branchId, tables, date, time, numberOfGuests, location, 0, buyerDetailsNeeded, buyerDetails);
-                            int orderId = DatabaseServer.addOrder(tableOrder); // return the id of the new order. -1 if failed
+                            int orderId = DatabaseServer.addTableOrder(tableOrder); // return the id of the new order. -1 if failed, -2 if the tables were taken by other client
 
-                            if (orderId != -1) { // success
+                            if (orderId != -1 && orderId != -2) { // success
                                 System.out.println("Added table order with id: " + orderId);
                                 Message response = new Message("TableOrderResponse", new Object[]{orderId});
                                 client.sendToClient(response);
-                            } else {  // fail
+
+                            } else if(orderId == -1){  // fail to save to database
                                 Warning failMsg = new Warning("Failed to add order! Please try again.");
                                 client.sendToClient(failMsg);
+                            }
+                            else {  // orderId=-2  there's no more room
+                                Message response = new Message("Tables were stolen", new Object[]{});
+                                client.sendToClient(response);
                             }
 
                         } catch (Exception e) {

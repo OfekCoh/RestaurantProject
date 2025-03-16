@@ -4,11 +4,11 @@ import java.util.List;
 
 public class TableOrderManage {
     private static List<Integer> availableTablesIds;
-    private static int branchId;
+    private static int branchId= -1;
     private static String date;
     private static String time;
-    private static int numberOfGuests;
-    private static String location;
+    private static int numberOfGuests=2;
+    private static String location="INDOOR";
 
     // setters
 
@@ -61,6 +61,16 @@ public class TableOrderManage {
 
     public static String getLocation() {
         return location;
+    }
+
+    // reset all field to default
+    public static void resetFields() {
+        TableOrderManage.availableTablesIds = null;
+        TableOrderManage.branchId = -1;
+        TableOrderManage.date = null;
+        TableOrderManage.time = null;
+        TableOrderManage.numberOfGuests = 2;
+        TableOrderManage.location = "INDOOR";
     }
 
 }

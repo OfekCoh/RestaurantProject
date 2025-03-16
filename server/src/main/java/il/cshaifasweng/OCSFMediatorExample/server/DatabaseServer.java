@@ -394,6 +394,24 @@ public class DatabaseServer {
         }
     }
 
+    public static int addTableOrder(TableOrder newOrder) throws Exception{
+        // if its host order there's no risk in losing your seats to other clients
+        WhoSubmittedBy whoSubmitted= newOrder.getWhoSubmitted();
+        if (whoSubmitted == WhoSubmittedBy.HOSTESS) return addOrder(newOrder);
+
+        // will check if there are still available tables (and other client didn't submit them)
+        List<Integer> availableTablesIds= checkAvailableTables(newOrder.getBranchId(), newOrder.getDate(), newOrder.getTime(), newOrder.getNumberOfGuests(), newOrder.getLocation());
+        List<TableSchema> tables= getTablesWithIds(availableTablesIds);
+        System.out.println("new availableTablesIds: " + availableTablesIds); // just to check in case the tables have been changed
+
+        // if there's no more room return -2, otherwise update the tables in the order and add to database
+        if(tables.isEmpty()) return -2;
+        else newOrder.setTables(tables);
+
+        return addOrder(newOrder);
+    }
+
+
     public static Object[] cancelOrder(int orderId, String phoneNumber) {
         int newStatus = -1;
         try (Session session = getSessionFactory().openSession()) {
@@ -569,7 +587,7 @@ public class DatabaseServer {
                 }
             }
 
-            else if (diners>=4) { // order to try is 4 3 2
+            else if (diners>=4) { // order to try is 4 3 2   (if its exactly 4 and there's no table of 4 we can try to get 2 tables of 2)
                 if (!ids_with_four.isEmpty()) {
                     minTablesNeeded.add(ids_with_four.remove(0)); // Pick a table of 4
                     diners -= 4;

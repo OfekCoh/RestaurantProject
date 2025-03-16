@@ -12,7 +12,8 @@ import java.util.stream.IntStream;
 public class BuyerDetailsFormController {
 
     private static String callerType; // who called me.
-
+    @FXML
+    private Label header;
     @FXML
     private TextField nameField;
     @FXML
@@ -211,6 +212,7 @@ public class BuyerDetailsFormController {
             case "orderTable":
                 totalCostLabel.setText("Please note: If you cancel within the last hour, a $10 fee will be applied.");
                 totalCostLabel.setStyle("-fx-font-size: 16; -fx-font-weight: normal;");
+                header.setText("Reservation for " + TableOrderManage.getNumberOfGuests() + " guests on " + TableOrderManage.getDate() + " at " + TableOrderManage.getTime() + ".");
                 break;
             case "complaint":
                 totalCostLabel.setText("No charges will be made - this is only for a potential refund.");

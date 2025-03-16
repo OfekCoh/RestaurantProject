@@ -94,16 +94,30 @@ public class OrderTableController {
         branchComboBox.valueProperty().addListener((obs, oldBranch, newBranch) -> {
             if (newBranch != null) {
                 datePicker.setDisable(false);
+                if(newBranch.getId() != TableOrderManage.getBranchId()) TableOrderManage.resetFields(); // reset fields if branch is changed
             } else {
                 datePicker.setDisable(true);
             }
             updateTimeComboBox();
         });
 
+        if(TableOrderManage.getBranchId() != -1) {
+            BranchEnt selectedBranch=SimpleClient.BranchList.stream()
+                    .filter(branch -> branch.getId() == TableOrderManage.getBranchId())
+                    .findFirst().orElse(null);
+            branchComboBox.setValue(selectedBranch);
+        }  // set the branch if already selected
+
         // When a date is selected, update the time selection.
         datePicker.valueProperty().addListener((obs, oldDate, newDate) -> {
             updateTimeComboBox();
         });
+
+        if(TableOrderManage.getDate() != null) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate parsedDate = LocalDate.parse(TableOrderManage.getDate(), formatter);
+            datePicker.setValue(parsedDate);
+        } // set the date if already selected
 
         // when time is selected, enable confirm button and more options
         timeComboBox.valueProperty().addListener((obs, oldTime, newTime) -> {
@@ -118,25 +132,26 @@ public class OrderTableController {
                 ));
 
                 // add choices to seats
-//                sittingLocationComboBox1.setItems(FXCollections.observableArrayList("Doesnt Matter", "INDOOR", "OUTDOOR"));
                 sittingLocationComboBox1.setItems(FXCollections.observableArrayList("INDOOR", "OUTDOOR"));
 
-                // Set default selections if none were chosen already
+                // Set selections or default values if none were chosen already,
                 if (sittingLocationComboBox1.getValue() == null) {
-//                    sittingLocationComboBox1.setValue("Doesnt Matter");
-                    sittingLocationComboBox1.setValue("INDOOR");
+                    sittingLocationComboBox1.setValue(TableOrderManage.getLocation()); // default indoor
                 }
                 if (numberOfGuestsComboBox.getValue() == null) {
-                    numberOfGuestsComboBox.setValue(2);
+                    numberOfGuestsComboBox.setValue(TableOrderManage.getNumberOfGuests()); // default 2
                 }
 
-            } else {  // if time wasnt selected
+            } else {  // if time wasn't selected
                 numberOfGuestsComboBox.setDisable(true);
                 sittingLocationComboBox1.setDisable(true);
                 confirmButton.setDisable(true);
             }
         });
 
+        if(TableOrderManage.getTime() != null) {
+            timeComboBox.setValue(TableOrderManage.getTime());
+        } // set the time if already selected
     }
 
 
@@ -227,6 +242,7 @@ public class OrderTableController {
 
     @FXML
     void goBack(ActionEvent event) throws Exception {
+        TableOrderManage.resetFields(); // reset table order
         App.setRoot("primary");
     }
 
@@ -238,12 +254,6 @@ public class OrderTableController {
         TableOrderManage.setTime(timeComboBox.getValue());  // hh:mm format
         TableOrderManage.setNumberOfGuests(numberOfGuestsComboBox.getValue());
         TableOrderManage.setLocation(sittingLocationComboBox1.getValue());
-
-//        LocalTime time = LocalTime.parse("17:15", DateTimeFormatter.ofPattern("HH:mm"));
-//        LocalTime plus1Hour = time.plusHours(1);       // Adds 1 hour (18:15)
-//        LocalTime plus30Min = time.plusMinutes(30);    // Adds 30 minutes (17:45)
-//        LocalTime plus90Min = time.plusMinutes(90);    // Adds 1 hour 30 minutes (18:45)
-//        LocalTime plus10Sec = time.plusSeconds(10);    // Adds 10 seconds
 
         // check database for open tables at the given times
         try {
