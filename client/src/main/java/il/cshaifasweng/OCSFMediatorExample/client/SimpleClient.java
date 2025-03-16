@@ -151,6 +151,30 @@ public class SimpleClient extends AbstractClient {
                     break;
                 }
 
+                case "cancel table order response": {
+                    Platform.runLater(() -> {
+                        try {
+                            int status= (int) payload[0];
+                            if(status==1){  // free cancellation success
+                                Alert alert = new Alert(Alert.AlertType.INFORMATION, ("order was canceled successfully, and no charges were made."));
+                                alert.show();
+                            }
+                            else if(status==2){ // paid cancellation success
+                                Alert alert = new Alert(Alert.AlertType.INFORMATION, ("Order canceled successfully.\nA $10 charge applies due to last-hour cancellation."));
+                                alert.show();
+                            }
+                            else { // -1 error
+                                Alert alert = new Alert(Alert.AlertType.ERROR, ("Something went wrong! Please try again."));
+                                alert.show();
+                            }
+                            App.setRoot("primary");
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    break;
+                }
+
                 case "TableOrderResponse": {
                     System.out.println("Order success! order id is: " + payload[0]);
                     Platform.runLater(() -> {
@@ -185,6 +209,7 @@ public class SimpleClient extends AbstractClient {
                     System.out.println("received branch report ");
                     break;
                 }
+
                 case "availableTables response": {
                     List<Integer> availableTablesIds = (List<Integer>) payload[0];
 
@@ -355,7 +380,11 @@ public class SimpleClient extends AbstractClient {
     public void sendCancelOrder(int orderId, String phoneNum) throws IOException {
         Message message = new Message("cancel order", new Object[]{orderId,phoneNum});
         sendToServer(message);
+    }
 
+    public void sendCancelTableOrder(int orderId, String phoneNum) throws IOException {
+        Message message = new Message("cancel table order", new Object[]{orderId,phoneNum});
+        sendToServer(message);
     }
 
     public void sendCheckTables() throws IOException {

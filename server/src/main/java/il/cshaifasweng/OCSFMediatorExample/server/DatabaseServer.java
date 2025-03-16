@@ -6,11 +6,13 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.service.ServiceRegistry;
 
+import javax.persistence.Column;
 import javax.persistence.criteria.*;
 import java.io.InputStream;
 import java.util.*;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
+
 
 import static il.cshaifasweng.OCSFMediatorExample.server.Convertor.*;
 
@@ -413,6 +415,48 @@ public class DatabaseServer {
         return addOrder(newOrder);
     }
 
+    public static int cancelTableOrder(int orderId, String phoneNumber) {
+        int newStatus= -1; // -1 fail, 1 free, 2 paid
+
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            // fetch order
+            TableOrder order = session.get(TableOrder.class, orderId);
+            if (order == null || order.getStatus() != 0) return -1; // if fetching order failed
+
+            // fetch buyer phone number
+            BuyerDetails details = order.getBuyerDetails(); // get phone number
+            if (details == null || !details.getPhone().equals(phoneNumber)) return -1; //Check we got the same phone number
+
+            // get order time
+            LocalDate orderLocalDate = LocalDate.parse(order.getDate());  // "2025-03-12"
+            LocalTime orderLocalTime = LocalTime.parse(order.getTime());  // "hh:mm"
+            LocalDateTime orderDateTime = LocalDateTime.of(orderLocalDate, orderLocalTime); // combine them both
+
+            // get time now and calculate if within the last hour
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime oneHourBefore = orderDateTime.minusHours(1);
+
+            if(now.isAfter(orderDateTime)) return -1; // cant cancel order that started
+
+            // check if now is within the last hour (oneHourBefore < now < orderStartTim)
+            if(now.isAfter(oneHourBefore) && now.isBefore(orderDateTime)) newStatus=2;  // needs to pay a fee
+            else newStatus=1; // free cancel
+
+            // Update order status
+            order.setStatus(newStatus);
+            session.update(order);
+            transaction.commit();
+
+            return newStatus;
+
+        } catch (Exception e) {
+            System.err.println("Failed to cancel order: " + e.getMessage());
+            e.printStackTrace();
+            return -1;
+        }
+    }
 
     public static Object[] cancelOrder(int orderId, String phoneNumber) {
         int newStatus = -1;

@@ -485,6 +485,36 @@ public class SimpleServer extends AbstractServer {
                     break;
                 }
 
+                case "cancel table order": {
+                    if (payload.length == 2) {
+                        try {
+                            int orderId = (int) payload[0];
+                            String phoneNumber = (String) payload[1];
+
+                            // cancel the order in the database (update status, we don't want to remove it from the database completely).
+                            int status = DatabaseServer.cancelTableOrder(orderId, phoneNumber);
+
+                            if (status != -1) {
+                                Message response = new Message("cancel table order response", new Object[]{status});
+                                client.sendToClient(response);
+                            } else {
+                                Warning failMsg = new Warning("Failed to cancel order!");
+                                client.sendToClient(failMsg);
+                            }
+
+                        } catch (Exception e) {
+                            try {
+                                Warning failMsg = new Warning("Error, Failed to cancel order: " + e.getMessage());
+                                client.sendToClient(failMsg);
+                            } catch (IOException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    break;
+                }
+
                 case "check tables": {
                     if (payload.length == 5) {
                         try {
@@ -758,7 +788,7 @@ public class SimpleServer extends AbstractServer {
 
 
 
-    // send message for all the cilents
+    // send message for all the clients
     public void sendToAllClients(Message message) {
         try {
             for (SubscribedClient subscribedClient : SubscribersList) {
