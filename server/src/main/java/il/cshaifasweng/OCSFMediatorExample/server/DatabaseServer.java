@@ -946,8 +946,8 @@ public class DatabaseServer {
 
     // -----------------------------------------------------------
     // generate report for a branch in a given month, query each relevant DB to get number of things per day in that month
-    // to get new report the developer will need to add relevant fiends to BranchReportEnt, add queries to this function and add table to FXML or change queries here and table names in FXML if
-    // he just want to change report parameters
+    // to get new report the developer will need to add relevant fiends to BranchReportEnt, add queries to this function and
+    // add table to FXML or change queries here and table names in FXML if he just want to change report parameters
     // -----------------------------------------------------------
     public static BranchReportEnt generateBranchReport(int branchId, int year, int month) {
         try (Session session = getSessionFactory().openSession()) {
@@ -955,7 +955,7 @@ public class DatabaseServer {
 
             int daysInMonth = getDaysInMonth(year, month);
             List<Integer> ordersPerDay = new ArrayList<>(Collections.nCopies(daysInMonth, 0));
-            List<Integer> peoplePerDay = new ArrayList<>(Collections.nCopies(daysInMonth, 0));
+            List<Integer> dinersPerDay = new ArrayList<>(Collections.nCopies(daysInMonth, 0));
             List<Integer> complaintsPerDay = new ArrayList<>(Collections.nCopies(daysInMonth, 0));
 
 
@@ -1018,22 +1018,22 @@ public class DatabaseServer {
                 ordersPerDay.set(day - 1, count);
             }
 
-            // Query to get people per day (from TableOrder)
-            List<Object[]> peopleDaily = session.createQuery(
-                            "SELECT DAY(t.startDate), SUM(t.numOfPeople) FROM TableOrder t " +
+            // Query to get diners per day
+            List<Object[]> dinersDaily = session.createQuery(
+                            "SELECT DAY(t.date), SUM(t.numberOfGuests) FROM TableOrder t " +
                                     "WHERE t.branchId = :branchId " +
-                                    "AND YEAR(t.startDate) = :year AND MONTH(t.startDate) = :month " +
-                                    "GROUP BY DAY(t.startDate)", Object[].class)
+                                    "AND YEAR(t.date) = :year AND MONTH(t.date) = :month " +
+                                    "GROUP BY DAY(t.date)", Object[].class)
                     .setParameter("branchId", branchId)
                     .setParameter("year", year)
                     .setParameter("month", month)
                     .getResultList();
 
             // Fill the list
-            for (Object[] result : peopleDaily) {
+            for (Object[] result : dinersDaily) {
                 int day = (int) result[0];
                 int count = ((Number) result[1]).intValue();
-                peoplePerDay.set(day - 1, count);
+                dinersPerDay.set(day - 1, count);
             }
 
             // Query to get complaints per day
@@ -1057,7 +1057,7 @@ public class DatabaseServer {
             transaction.commit();
 
             // Return the generated report with the updated fields
-            return new BranchReportEnt(branchId, year, month, failedOrders, totalComplaintsRefund, totalOrdersIncome, complaintsHandledAutomatically, ordersPerDay, peoplePerDay, complaintsPerDay);
+            return new BranchReportEnt(branchId, year, month, failedOrders, totalComplaintsRefund, totalOrdersIncome, complaintsHandledAutomatically, ordersPerDay, dinersPerDay, complaintsPerDay);
         } catch (Exception e) {
             System.err.println("Error generating branch report: " + e.getMessage());
             e.printStackTrace();
@@ -1102,7 +1102,7 @@ public class DatabaseServer {
             calendar.add(Calendar.MONTH, -1); // Set to previous month
             int daysInPrevMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
 
-            System.out.println("⚡ Inserting test data for Branch ID 1...");
+            System.out.println("Inserting test data for Branch ID 1...");
 
             // Insert 10 Orders (Always Branch ID 1)
             for (int i = 0; i < 10; i++) {
@@ -1128,24 +1128,21 @@ public class DatabaseServer {
 
             // Insert 10 Table Orders (Always Branch ID 1)
             for (int i = 0; i < 10; i++) {
-                int numOfPeople = random.nextInt(6) + 1;
+                int numberOfGuests = random.nextInt(6) + 1;
                 calendar.set(Calendar.DAY_OF_MONTH, random.nextInt(daysInPrevMonth) + 1);
-                Date startDate = calendar.getTime();
-                calendar.add(Calendar.HOUR, 2);
-                Date endDate = calendar.getTime();
+                String date = calendar.get(Calendar.YEAR) + "-" + (calendar.get(Calendar.MONTH) + 1) + "-" + calendar.get(Calendar.DAY_OF_MONTH);
+                String time = "18:00";
+                String location = "INDOOR";
+                int status = random.nextInt(3); // Random status
+                boolean buyerDetailsNeeded = random.nextBoolean();
 
                 BuyerDetails tableBuyer = new BuyerDetails(
                         "Customer" + i, "Table Address " + i, "999888777" + i,
                         "TableUser" + i, "5111-2222-3333-444" + i, 9, 2027, "456"
                 );
 
-                int randomStatus = random.nextInt(5); // Random status between 0 and 4
-
                 TableOrder tableOrder = new TableOrder(
-                        numOfPeople, 1, null,
-                        startDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime(),
-                        endDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime(),
-                        randomStatus, WhoSubmittedBy.ORDERED, tableBuyer
+                        1, null, date, time, numberOfGuests, location, status, buyerDetailsNeeded, tableBuyer
                 );
 
                 session.save(tableOrder);
@@ -1165,7 +1162,7 @@ public class DatabaseServer {
                 int randomRefund = random.nextInt(100); // Random refund amount
 
                 Complaint complaint = new Complaint(
-                        "Issue " + i, complaintDate, 1, buyer, "a"
+                        "Issue " + i, complaintDate, 1, buyer, "random email"
                 );
                 complaint.setStatus(randomStatus);
                 complaint.setRefund(randomRefund);
@@ -1174,11 +1171,11 @@ public class DatabaseServer {
             }
 
             transaction.commit();
-            System.out.println("✅ Test data inserted successfully for Branch ID 1.");
+            System.out.println("Test data inserted successfully for Branch ID 1.");
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println("❌ Error inserting test data: " + e.getMessage());
+            System.err.println("Error inserting test data: " + e.getMessage());
         }
     }
 

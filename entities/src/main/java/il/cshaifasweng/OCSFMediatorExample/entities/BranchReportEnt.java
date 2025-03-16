@@ -12,10 +12,10 @@ public class BranchReportEnt implements Serializable {
     private double totalOrdersIncome;
     private double totalComplaintsRefund;
     private List<Integer> ordersPerDay;
-    private List<Integer> peoplePerDay;
+    private List<Integer> dinersPerDay;
     private List<Integer> complaintsPerDay;
 
-    public BranchReportEnt(int branchId, int year, int month, int failedOrders, double totalComplaintsRefund, double totalOrdersIncome, int complaintsHandledAutomatically,List<Integer> ordersPerDay, List<Integer> peoplePerDay, List<Integer> complaintsPerDay) {
+    public BranchReportEnt(int branchId, int year, int month, int failedOrders, double totalComplaintsRefund, double totalOrdersIncome, int complaintsHandledAutomatically,List<Integer> ordersPerDay, List<Integer> dinersPerDay, List<Integer> complaintsPerDay) {
         this.branchId = branchId;
         this.year = year;
         this.month = month;
@@ -24,7 +24,7 @@ public class BranchReportEnt implements Serializable {
         this.totalOrdersIncome = totalOrdersIncome;
         this.complaintsHandledAutomatically = complaintsHandledAutomatically;
         this.ordersPerDay = ordersPerDay;
-        this.peoplePerDay = peoplePerDay;
+        this.dinersPerDay = dinersPerDay;
         this.complaintsPerDay = complaintsPerDay;
     }
 
@@ -37,6 +37,6 @@ public class BranchReportEnt implements Serializable {
     public int getMonth() { return month; }
     public int getFailedOrders() { return failedOrders; }
     public List<Integer> getOrdersPerDay() { return ordersPerDay; }
-    public List<Integer> getPeoplePerDay() { return peoplePerDay; }
+    public List<Integer> getDinersPerDay() { return dinersPerDay; }
     public List<Integer> getComplaintsPerDay() { return complaintsPerDay; }
 }

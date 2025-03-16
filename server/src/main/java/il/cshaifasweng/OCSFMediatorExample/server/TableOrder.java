@@ -36,7 +36,7 @@ public class TableOrder {
     private String location;
 
     @Column(nullable = false)
-    private int status; // 0=Pending/Completed, 1=Free Canceled, 2= Paid Canceled
+    private int status; // 0=Pending/Completed, 1 = Free Canceled, 2 = Paid Canceled
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

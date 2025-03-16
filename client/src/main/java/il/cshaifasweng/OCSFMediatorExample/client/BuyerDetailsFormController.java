@@ -24,9 +24,6 @@ public class BuyerDetailsFormController {
     private TextField addressField;
 
     @FXML
-    private Label headlineText;
-
-    @FXML
     private Label adressLabel;
 
 
@@ -251,7 +248,7 @@ public class BuyerDetailsFormController {
                 emailLabel.setVisible(true);
                 emailText.setVisible(true);
                 adressLabel.setVisible(false);
-                headlineText.setText("Personal Information Form");
+                header.setText("Personal Information Form");
                 break;
             default:
                 break;

@@ -44,7 +44,7 @@ public class BranchReportController {
 
         // Generate histograms
         XYChart.Series<String, Number> ordersSeries = prepareHistogramData(report.getOrdersPerDay(), "Orders per Day");
-        XYChart.Series<String, Number> peopleSeries = prepareHistogramData(report.getPeoplePerDay(), "People per Day");
+        XYChart.Series<String, Number> peopleSeries = prepareHistogramData(report.getDinersPerDay(), "People per Day");
         XYChart.Series<String, Number> complaintsSeries = prepareHistogramData(report.getComplaintsPerDay(), "Complaints per Day");
 
         // Add data to charts
@@ -54,11 +54,11 @@ public class BranchReportController {
 
         // Set summary labels by summing the list values using sum()
         int totalOrders = report.getOrdersPerDay().stream().mapToInt(Integer::intValue).sum();
-        int totalPeople = report.getPeoplePerDay().stream().mapToInt(Integer::intValue).sum();
+        int totalPeople = report.getDinersPerDay().stream().mapToInt(Integer::intValue).sum();
         int totalComplaints = report.getComplaintsPerDay().stream().mapToInt(Integer::intValue).sum();
 
         orderSummaryLabel.setText("Total Orders: " + totalOrders + " | Failed Orders: " + report.getFailedOrders() + " | Total income: " + report.getTotalOrdersIncome());
-        peopleSummaryLabel.setText("Total People: " + totalPeople);
+        peopleSummaryLabel.setText("Total Diners: " + totalPeople);
         complaintsSummaryLabel.setText("Total Complaints: " + totalComplaints + " | Complaints handled automatically: " + report.getComplaintsHandledAutomatically());
     }
 

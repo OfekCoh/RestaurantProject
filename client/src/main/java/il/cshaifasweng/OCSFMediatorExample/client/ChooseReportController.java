@@ -64,9 +64,9 @@ public class ChooseReportController {
 
         branchComboBox.setItems(FXCollections.observableArrayList(filteredBranches));
 
-        // Populate yearComboBox with years from 2000 to the current year
+        // Populate yearComboBox with years from 2024 to the current year
         int currentYear = LocalDate.now().getYear();
-        yearComboBox.setItems(FXCollections.observableArrayList(IntStream.rangeClosed(2000, currentYear).boxed().toList()));
+        yearComboBox.setItems(FXCollections.observableArrayList(IntStream.rangeClosed(2024, currentYear).boxed().toList()));
 
         // Listener for year selection
         yearComboBox.valueProperty().addListener((obs, oldYear, newYear) -> {
