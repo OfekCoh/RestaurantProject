@@ -5,8 +5,10 @@ import javafx.scene.control.*;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Objects;
+import java.util.TimeZone;
 import java.util.stream.IntStream;
 
 public class BuyerDetailsFormController {
@@ -19,6 +21,19 @@ public class BuyerDetailsFormController {
     private TextField phoneField;
     @FXML
     private TextField addressField;
+
+    @FXML
+    private Label headlineText;
+
+    @FXML
+    private Label adressLabel;
+
+
+    @FXML
+    private Label emailLabel;
+
+    @FXML
+    private TextField emailText;
 
     // Payment Info
     @FXML
@@ -57,6 +72,10 @@ public class BuyerDetailsFormController {
         monthCombo.setValue(currentMonth);
         yearCombo.setValue(currentYear);
 
+        // Will be available only for complaint
+        emailLabel.setVisible(false);
+        emailText.setVisible(false);
+
         updateUIBasedOnCallerType(); // change the lables as you wish
     }
 
@@ -66,7 +85,7 @@ public class BuyerDetailsFormController {
         String name = nameField.getText().trim();
         String phone = phoneField.getText().trim();
         String address = addressField.getText().trim();
-
+        String email = emailText.getText().trim();
         // Payment info
         String userID = idField.getText().trim();
         String cardNumber = cardNumberField.getText().trim();
@@ -74,15 +93,24 @@ public class BuyerDetailsFormController {
         Integer year = yearCombo.getValue();
         String cvv = cvvField.getText().trim();
 
+        boolean checkFields;
+        if(callerType.equals("complaint")) {
+            checkFields = name.isEmpty() || phone.isEmpty() || email.isEmpty() || userID.isEmpty() || cardNumber.isEmpty() || cvv.isEmpty() || month == null || year == null;
+        }
+        else{
+            checkFields = name.isEmpty() || phone.isEmpty() || address.isEmpty() || userID.isEmpty() || cardNumber.isEmpty() || cvv.isEmpty() || month == null || year == null;
+        }
         // Basic checks if anything is empty
-        if (name.isEmpty() || phone.isEmpty() || address.isEmpty() || userID.isEmpty() || cardNumber.isEmpty() || cvv.isEmpty() || month == null || year == null) {
+        if (checkFields) {
             Alert alert = new Alert(Alert.AlertType.ERROR,
                     String.format("Message: %s\n",
                             "Please fill in all required fields!"
                     ));
             alert.show();
-//            System.out.println("Please fill in all required fields!");
+            System.out.println("Please fill in all required fields!");
             return;
+
+
         }
 
         // Validate numeric phone, ID, cardNumber, CVV
@@ -108,20 +136,20 @@ public class BuyerDetailsFormController {
         int currentMo = now.getMonthValue();
 
         if (year < currentYr) {
+            // prints alert to the user
             Alert alert = new Alert(Alert.AlertType.ERROR,
                     String.format("Message: %s\n",
                             "Card Expired (year < current year)!"
                     ));
             alert.show();
-//            System.out.println("Card Expired (year < current year)!");
             return;
         } else if (year == currentYr && month < currentMo) {
+            // prints alert to the user
             Alert alert = new Alert(Alert.AlertType.ERROR,
                     String.format("Message: %s\n",
                             "Card Expired (month < current month)!"
                     ));
             alert.show();
-//            System.out.println("Card Expired (month < current month)!");
             return;
         }
 
@@ -165,7 +193,10 @@ public class BuyerDetailsFormController {
             case "complaint":
                 System.out.println("got here from complaint");
                 App.setRoot("primary");
-                SimpleClient.getClient().sendComplaint(ComplaintController.getComplainText(), new Date(), name, address, phone, userID, cardNumber, month, year, cvv);
+                // Convert the current Date to UTC
+                Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+                Date utcDate = calendar.getTime(); // This gives you the current date in UTC
+                SimpleClient.getClient().sendComplaint(ComplaintController.getComplainText(), utcDate, ComplaintController.getBranchId(), name, "", phone, userID, cardNumber, month, year, cvv, email);
                 break;
 
             default:
@@ -216,6 +247,11 @@ public class BuyerDetailsFormController {
                 break;
             case "complaint":
                 totalCostLabel.setVisible(false);
+                addressField.setVisible(false);
+                emailLabel.setVisible(true);
+                emailText.setVisible(true);
+                adressLabel.setVisible(false);
+                headlineText.setText("Personal Information Form");
                 break;
             default:
                 break;

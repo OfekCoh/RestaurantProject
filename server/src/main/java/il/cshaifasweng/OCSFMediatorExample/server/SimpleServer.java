@@ -484,19 +484,22 @@ public class SimpleServer extends AbstractServer {
                 // Expecting payload: [String email, String password]
                 // -----------------------------------------------------------
                 case "login": {
+
                     if (payload.length == 2) {
                         String email = (String) payload[0];
                         String password = (String) payload[1];
                         try {
                             Object[] loginResult = DatabaseServer.userLogin(email, password);
                             boolean loginSuccess = (boolean) loginResult[0];
-
                             if (loginSuccess) {
+
                                 int workerId = (int) loginResult[1];
                                 int ruleId = (int) loginResult[2];
-//                                System.out.println("Welcome Worker ID: " + workerId);
-                                Message response = new Message("loginResponse", new Object[]{true, workerId, ruleId});
+                                List<Integer> userBranchesIds = (List<Integer>) loginResult[3];
+
+                                Message response = new Message("loginResponse", new Object[]{true, workerId, ruleId, userBranchesIds});
                                 client.sendToClient(response);
+
                             } else {
                                 System.out.println("Login failed. Invalid credentials or already logged in.");
                                 Message response = new Message("loginResponse", new Object[]{false, -1});
@@ -540,20 +543,24 @@ public class SimpleServer extends AbstractServer {
                 // -----------------------------------------------------------
                 // complaints commands
                 // -----------------------------------------------------------
+                // add complaint to the db
                 case "complaint": {
-                    if (payload.length == 10) {
+                    if (payload.length == 12) {
                         String complaintText = (String) payload[0];
                         Date date = (Date) payload[1];
-                        String name = (String) payload[2];
-                        String address = (String) payload[3];
-                        String phone = (String) payload[4];
-                        String userId = (String) payload[5];
-                        String cardNum = (String) payload[6];
-                        int cardMonth = (int) payload[7];
-                        int cardYear = (int) payload[8];
-                        String cvv = (String) payload[9];
+                        int branchID = (int) payload[2];
+                        String name = (String) payload[3];
+                        String address = (String) payload[4];
+                        String phone = (String) payload[5];
+                        String userId = (String) payload[6];
+                        String cardNum = (String) payload[7];
+                        int cardMonth = (int) payload[8];
+                        int cardYear = (int) payload[9];
+                        String cvv = (String) payload[10];
+                        String email = (String) payload[11];
 
-                        Complaint newComplaint = new Complaint(complaintText, date, new BuyerDetails(name, address, phone, userId, cardNum, cardMonth, cardYear, cvv));
+                        System.out.println("here");
+                        Complaint newComplaint = new Complaint(complaintText, date, branchID, new BuyerDetails(name, address, phone, userId, cardNum, cardMonth, cardYear, cvv), email);
                         try {
                             boolean result = DatabaseServer.addComplaint(newComplaint);
 
@@ -561,8 +568,11 @@ public class SimpleServer extends AbstractServer {
                                 Warning successMsg = new Warning("Complaint successfully added!");
                                 client.sendToClient(successMsg);
 
-                                // send new list of complaints to client
-                                sendToAllClients(complaintsResponse());
+                                // send new complaint to clients to update open handle tables
+                                List<ComplaintEnt> complaintsList = new ArrayList<>(); // Initialize the list
+                                ComplaintEnt newComplaintENT = Convertor.convertToComplaintEnt(newComplaint); // Create a new complaint
+                                complaintsList.add(newComplaintENT); // Add the complaint to the list
+                                sendToAllClients(new Message("complaints response", new Object[]{complaintsList}));
 
                             } else {
                                 Warning failMsg = new Warning("Failed to add Complaint!");
@@ -587,27 +597,48 @@ public class SimpleServer extends AbstractServer {
                     break;
 
                 }
-                case "handle complaint":
-                    if(payload.length == 2) {
-                        int complaintId = (int) payload[0];
-                        int refund = (int) payload[1];
-                        DatabaseServer.handleComplaint(complaintId, refund);
-                        // send updated complaints to client
-                        try {
-                            sendToAllClients(complaintsResponse());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    }
-
+                // send all the complaints in the db in complaintEnt list
                 case "get complaints": {
                     try {
-                        client.sendToClient(complaintsResponse());
+                        List<ComplaintEnt> complaints = DatabaseServer.getComplaints();
+                        System.out.println("Complaints: " + complaints.size());
+                        client.sendToClient(new Message("complaints response", new Object[]{complaints}));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
+                }
+
+                case "handle complaint": {
+                    if (payload.length == 2) {
+                        int complaintId = (int) payload[0];
+                        double refund = (double) payload[1];
+                        DatabaseServer.handleComplaint(complaintId, refund);
+
+                        // send new complaint to clients to update open handle tables
+                        List<ComplaintEnt> complaintsList = new ArrayList<>(); // Initialize the list
+                        ComplaintEnt newComplaintENT = new ComplaintEnt(complaintId, "", null, "", 0, "", 0); // Create a new complaint with the removed complaint id to remove it from open tables
+                        complaintsList.add(newComplaintENT); // Add the complaint to the list
+                        sendToAllClients(new Message("complaints response", new Object[]{complaintsList}));
+                    }
+                }
+
+                case "get branch report":{
+                    if (payload.length == 3) {
+                        int year = (int) payload[0];
+                        int month = (int) payload[1];
+                        int branchId = (int) payload[2];
+                        try {
+                            BranchReportEnt branchReport = DatabaseServer.generateBranchReport(branchId, year, month);
+                            Message response = new Message("branch report response", new Object[]{branchReport});
+                            client.sendToClient(response);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        break;
+
+                    }
+
                 }
 
 
@@ -627,12 +658,7 @@ public class SimpleServer extends AbstractServer {
         }
     }
 
-    // send complaints to client for complaints handling
-    public Message complaintsResponse() {
-        List<ComplaintEnt> complaints = DatabaseServer.getComplaints();
-        System.out.println("Complaints: " + complaints.size());
-        return new Message("complaints response", new Object[]{complaints});
-    }
+
 
     // send message for all the cilents
     public void sendToAllClients(Message message) {
@@ -653,9 +679,9 @@ public class SimpleServer extends AbstractServer {
 
             // Only notify clients if complaints were updated
             if (complaintsUpdated) {
-                System.out.println("Auto-handled complaints. Notifying clients...");
+                System.out.println("Auto-handled complaints. Notifying clients..."); // should i notify clients?
 
             }
-        }, 0, 10, TimeUnit.MINUTES);
+        }, 0,  1, TimeUnit.MINUTES);
     }
 }

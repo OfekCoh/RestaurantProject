@@ -119,7 +119,7 @@ public class Convertor {
     public static ComplaintEnt convertToComplaintEnt(Complaint complaint) {
         if (complaint == null) return null;
         System.out.println("Converting Complaint: " + complaint.getComplaintId());
-        return new ComplaintEnt(complaint.getComplaintId(), complaint.getComplaint(), complaint.getDate(), complaint.getBuyerDetails().getName(), complaint.getStatus());
+        return new ComplaintEnt(complaint.getComplaintId(), complaint.getComplaint(), complaint.getDate(), DatabaseServer.getBranchNameById(complaint.getBranchId()), complaint.getBranchId(), complaint.getBuyerDetails().getName(), complaint.getStatus());
 
     }
     public static List<ComplaintEnt> convertToComplaintEntList(List<Complaint> complaintsList) {

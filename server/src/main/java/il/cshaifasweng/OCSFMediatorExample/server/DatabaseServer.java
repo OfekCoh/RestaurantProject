@@ -29,6 +29,7 @@ public class DatabaseServer {
             }
             System.out.println("Initializing Database...");
             createDatabase(session);
+            insertTestData();// test for roy
             session.getTransaction().commit();
         } catch (Exception exception) {
             System.err.println("Error during initialization: " + exception.getMessage());
@@ -118,13 +119,13 @@ public class DatabaseServer {
         Worker w1 = new Worker("Bob Regular", "bob@company.com", "1234", false, 0, List.of(1));   // role 0 = regular
         Worker w2 = new Worker("Eve Regular", "eve@company.com", "1234", false, 0, List.of(2));    // already logged in
         //Costumer support
-        Worker w3 = new Worker("Peter Parker", "peter@company.com", "1234", false, 1, List.of(3));
+        Worker w3 = new Worker("Peter Parker", "peter@company.com", "1234", false, 1, List.of(2)); // role 1 = costumer service
         //Branch Manager
-        Worker w4 = new Worker("Charlie Manager", "charlie@company.com", "1234", false, 2, Arrays.asList(1, 2)); // role 1 = branch manager
+        Worker w4 = new Worker("Charlie Manager", "charlie@company.com", "1234", false, 2, Arrays.asList(1, 2)); // role 2 = branch manager
         //Dietitian
-        Worker w5 = new Worker("Alice Dietitian", "alice@company.com", "1234", false, 3, List.of(0));   // role 2 = dietitian
+        Worker w5 = new Worker("Alice Dietitian", "alice@company.com", "1234", false, 3, List.of(0));   // role 3 = dietitian
         //Ceo
-        Worker w6 = new Worker("Dana CEO", "dana@company.com", "1234", false, 4, List.of(0));   // role 3 = CEO
+        Worker w6 = new Worker("Dana CEO", "dana@company.com", "1234", false, 4, List.of(0));   // role 4 = CEO
 
 
         session.save(w1);
@@ -177,6 +178,7 @@ public class DatabaseServer {
             }
 
             session.flush();
+
         }
 
     }
@@ -272,6 +274,9 @@ public class DatabaseServer {
             return Collections.emptyList();
         }
     }
+
+
+
     public static List<BranchEnt> getBranches() {
         try (Session session = getSessionFactory().openSession()) {
             List<RestaurantBranch> allBranches = getAllBranches(session);
@@ -568,7 +573,7 @@ public class DatabaseServer {
 
 
     public static Object[] userLogin(String email, String password) {
-        Object[] result = new Object[3];
+        Object[] result = new Object[4];
         result[0] = false;
         result[1] = -1;
 
@@ -592,9 +597,14 @@ public class DatabaseServer {
                 criteriaUpdate.where(builder.equal(updateRoot.get("id"), worker.getId()));
 
                 session.createQuery(criteriaUpdate).executeUpdate();
+
+                // Convert workingBranch to a proper ArrayList<Integer> before storing it in result
+                List<Integer> branchList = worker.getWorkingBranch();
                 result[0] = true;
                 result[1] = worker.getId();
                 result[2] = worker.getRole();
+                result[3] = new ArrayList<>(branchList);  // Make sure that it stored as a List<Integer>
+
             }
 
             transaction.commit();
@@ -657,7 +667,8 @@ public class DatabaseServer {
             e.printStackTrace();
         }
     }
-    public static void handleComplaint(int complaintId, int refund) {
+
+    public static void handleComplaint(int complaintId, double refund) {
         Transaction transaction = null;
         try (Session session = getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
@@ -672,11 +683,10 @@ public class DatabaseServer {
             // Update the status and refund fields
             existingComplaint.setStatus(1);
             existingComplaint.setRefund(refund); // Assuming 'refund' exists in Complaint entity
-
             // Persist the update
             session.update(existingComplaint);
             transaction.commit();
-            System.out.println("Complaint with ID " + complaintId + " handled, refunded amount: " + refund);
+            System.out.println("Complaint with ID " + complaintId + " handled, refunded amount: " + refund + ", Email sent to: " + existingComplaint.getEmail());// Send mail to client
 
         } catch (Exception e) {
             if (transaction != null) {
@@ -686,40 +696,205 @@ public class DatabaseServer {
         }
     }
 
-    // auto handle old complaints
     public static boolean autoHandleOldComplaints() {
         try (Session session = getSessionFactory().openSession()) {
             Transaction transaction = session.beginTransaction();
 
-            // Get current time minus 24 hours
-            Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.HOUR, -24);
-            Date twentyFourHoursAgo = cal.getTime();
+            // Get current time in UTC using Calendar
+            Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC")); // Set Calendar to UTC
+            cal.add(Calendar.HOUR, -24); // Subtract 24 hours
+            Date twentyFourHoursAgo = cal.getTime(); // This gives the Date 24 hours ago in UTC
 
-            // Find complaints older than 24 hours with status 0 (waiting)
+            // Build a query to retrieve complaints older than 24 hours with status 0 (waiting)
             CriteriaBuilder builder = session.getCriteriaBuilder();
-            CriteriaUpdate<Complaint> updateQuery = builder.createCriteriaUpdate(Complaint.class);
-            Root<Complaint> root = updateQuery.from(Complaint.class);
+            CriteriaQuery<Complaint> selectQuery = builder.createQuery(Complaint.class);
+            Root<Complaint> root = selectQuery.from(Complaint.class);
+            selectQuery.select(root)
+                    .where(
+                            builder.equal(root.get("status"), 0), // Only complaints that are waiting
+                            builder.lessThan(root.get("date"), twentyFourHoursAgo) // Complaints older than 24 hours
+                    );
 
-            updateQuery.set(root.get("status"), 2); // Change status to 2
-            updateQuery.where(
-                    builder.equal(root.get("status"), 0),
-                    builder.lessThan(root.get("date"), twentyFourHoursAgo)
-            );
+            // Execute the query and get the list of complaints to be updated
+            List<Complaint> oldComplaints = session.createQuery(selectQuery).getResultList();
 
-            int updatedRows = session.createQuery(updateQuery).executeUpdate();
-            transaction.commit();
-
-            if (updatedRows > 0) {
-                System.out.println("Updated " + updatedRows + " complaints to status 2 (auto-handled).");
-                return true;  //  Returns `true` if complaints were updated
+            if (oldComplaints.isEmpty()) {
+                System.out.println("No complaints found that require automatic handling.");
+                transaction.commit();
+                return false; // No complaints were updated
             }
+
+            // Iterate through each complaint, update its status, and send an email notification
+            for (Complaint complaint : oldComplaints) {
+                complaint.setStatus(2); // Mark complaint as auto-handled
+                session.update(complaint); // Persist the update
+
+                // Send an email notification (assuming getEmail() exists in Complaint)
+                System.out.println("Complaint " + complaint.getComplaintId() + " automatically handled, message sent to " + complaint.getEmail());
+            }
+
+            // Commit the transaction after processing all complaints
+            transaction.commit();
+            return true; // Complaints were updated
+
         } catch (Exception e) {
             System.err.println("Error auto-handling old complaints: " + e.getMessage());
             e.printStackTrace();
         }
-        return false; // Returns `false` if no complaints were updated
+        return false; // Return false if an error occurs
     }
+
+
+
+
+    public static String getBranchNameById(int branchId) {
+        try (Session session = getSessionFactory().openSession()) {
+            // Fetch the branch name from the database
+            String branchName = session.createQuery(
+                            "SELECT r.branchName FROM RestaurantBranch r WHERE r.id = :branchId",
+                            String.class)
+                    .setParameter("branchId", branchId)
+                    .uniqueResult();
+
+            // Return the branch name or a default message if not found
+            return (branchName != null) ? branchName : "Branch not found";
+        } catch (Exception e) {
+            System.err.println("Error retrieving branch name: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // -----------------------------------------------------------
+    // generate report for a branch in a given month, query each relevant DB to get number of things per day in that month
+    // to get new report the developer will need to add relevant fiends to BranchReportEnt, add queries to this function and add table to FXML or change queries here and table names in FXML if
+    // he just want to change report parameters
+    // -----------------------------------------------------------
+    public static BranchReportEnt generateBranchReport(int branchId, int year, int month) {
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            int daysInMonth = getDaysInMonth(year, month);
+            List<Integer> ordersPerDay = new ArrayList<>(Collections.nCopies(daysInMonth, 0));
+            List<Integer> peoplePerDay = new ArrayList<>(Collections.nCopies(daysInMonth, 0));
+            List<Integer> complaintsPerDay = new ArrayList<>(Collections.nCopies(daysInMonth, 0));
+
+
+            Number failedOrdersResult = session.createQuery(
+                            "SELECT COUNT(o) FROM Order o WHERE o.selectedBranch = :branchId " +
+                                    "AND YEAR(o.orderDate) = :year AND MONTH(o.orderDate) = :month " +
+                                    "AND o.status NOT IN (0, 4)", Number.class)
+                    .setParameter("branchId", branchId)
+                    .setParameter("year", year)
+                    .setParameter("month", month)
+                    .uniqueResult();
+            int failedOrders = (failedOrdersResult != null) ? failedOrdersResult.intValue() : 0;// if null put 0
+
+            // Calculate total income from orders safely
+            Number totalOrdersIncomeResult = session.createQuery(
+                            "SELECT SUM(o.finalPrice) FROM Order o WHERE o.selectedBranch = :branchId " +
+                                    "AND YEAR(o.orderDate) = :year AND MONTH(o.orderDate) = :month", Number.class)
+                    .setParameter("branchId", branchId)
+                    .setParameter("year", year)
+                    .setParameter("month", month)
+                    .uniqueResult();
+            double totalOrdersIncome = (totalOrdersIncomeResult != null) ? totalOrdersIncomeResult.doubleValue() : 0.0;// if null put 0
+
+            // Count complaints handled automatically safely
+            Number complaintsHandledAutomaticallyResult = session.createQuery(
+                            "SELECT COUNT(c) FROM Complaint c WHERE c.branchId = :branchId " +
+                                    "AND YEAR(c.date) = :year AND MONTH(c.date) = :month " +
+                                    "AND c.status = 2", Number.class)
+                    .setParameter("branchId", branchId)
+                    .setParameter("year", year)
+                    .setParameter("month", month)
+                    .uniqueResult();
+            int complaintsHandledAutomatically = (complaintsHandledAutomaticallyResult != null) ? complaintsHandledAutomaticallyResult.intValue() : 0;// if null put 0
+
+            // Calculate total refunds from complaints as double
+            Number totalComplaintsRefundResult = session.createQuery(
+                            "SELECT SUM(c.refund) FROM Complaint c WHERE c.branchId = :branchId " +
+                                    "AND YEAR(c.date) = :year AND MONTH(c.date) = :month", Number.class)
+                    .setParameter("branchId", branchId)
+                    .setParameter("year", year)
+                    .setParameter("month", month)
+                    .uniqueResult();
+            double totalComplaintsRefund = (totalComplaintsRefundResult != null) ? totalComplaintsRefundResult.doubleValue() : 0.0; // if null put 0
+
+            // Query to get orders per day
+            List<Object[]> ordersDaily = session.createQuery(
+                            "SELECT DAY(o.orderDate), COUNT(o) FROM Order o " +
+                                    "WHERE o.selectedBranch = :branchId " +
+                                    "AND YEAR(o.orderDate) = :year AND MONTH(o.orderDate) = :month " +
+                                    "GROUP BY DAY(o.orderDate)", Object[].class)
+                    .setParameter("branchId", branchId)
+                    .setParameter("year", year)
+                    .setParameter("month", month)
+                    .getResultList();
+
+            // Fill the list
+            for (Object[] result : ordersDaily) {
+                int day = (int) result[0];
+                int count = ((Number) result[1]).intValue();
+                ordersPerDay.set(day - 1, count);
+            }
+
+            // Query to get people per day (from TableOrder)
+            List<Object[]> peopleDaily = session.createQuery(
+                            "SELECT DAY(t.startDate), SUM(t.numOfPeople) FROM TableOrder t " +
+                                    "WHERE t.branchId = :branchId " +
+                                    "AND YEAR(t.startDate) = :year AND MONTH(t.startDate) = :month " +
+                                    "GROUP BY DAY(t.startDate)", Object[].class)
+                    .setParameter("branchId", branchId)
+                    .setParameter("year", year)
+                    .setParameter("month", month)
+                    .getResultList();
+
+            // Fill the list
+            for (Object[] result : peopleDaily) {
+                int day = (int) result[0];
+                int count = ((Number) result[1]).intValue();
+                peoplePerDay.set(day - 1, count);
+            }
+
+            // Query to get complaints per day
+            List<Object[]> complaintsDaily = session.createQuery(
+                            "SELECT DAY(c.date), COUNT(c) FROM Complaint c " +
+                                    "WHERE c.branchId = :branchId " +
+                                    "AND YEAR(c.date) = :year AND MONTH(c.date) = :month " +
+                                    "GROUP BY DAY(c.date)", Object[].class)
+                    .setParameter("branchId", branchId)
+                    .setParameter("year", year)
+                    .setParameter("month", month)
+                    .getResultList();
+
+            // Fill the list
+            for (Object[] result : complaintsDaily) {
+                int day = (int) result[0];
+                int count = ((Number) result[1]).intValue();
+                complaintsPerDay.set(day - 1, count);
+            }
+
+            transaction.commit();
+
+            // Return the generated report with the updated fields
+            return new BranchReportEnt(branchId, year, month, failedOrders, totalComplaintsRefund, totalOrdersIncome, complaintsHandledAutomatically, ordersPerDay, peoplePerDay, complaintsPerDay);
+        } catch (Exception e) {
+            System.err.println("Error generating branch report: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // number of days in a month
+    private static int getDaysInMonth(int year, int month) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, year);
+        calendar.set(Calendar.MONTH, month - 1); // Months are 0-based in Calendar
+        return calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+    }
+
+
 //    private static <T> List<T> getAllEntities(Class<T> entityClass) throws Exception {
 //        CriteriaBuilder builder = session.getCriteriaBuilder();
 //        CriteriaQuery<T> query = builder.createQuery(entityClass);
@@ -739,4 +914,96 @@ public class DatabaseServer {
 //            }
 //        }
 //    }
+/// //////////////////////////////////////test for roy
+    public static void insertTestData() {
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+            Random random = new Random();
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.MONTH, -1); // Set to previous month
+            int daysInPrevMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+
+            System.out.println("⚡ Inserting test data for Branch ID 1...");
+
+            // Insert 10 Orders (Always Branch ID 1)
+            for (int i = 0; i < 10; i++) {
+                boolean isDelivery = random.nextBoolean();
+                calendar.set(Calendar.DAY_OF_MONTH, random.nextInt(daysInPrevMonth) + 1);
+                Date orderDate = calendar.getTime();
+
+                BuyerDetails buyer = new BuyerDetails(
+                        "Customer" + i, "Address " + i, "123456789" + i,
+                        "User" + i, "4111-1111-1111-111" + i, 6, 2025, "123"
+                );
+
+                int randomStatus = random.nextInt(5); // Random status between 0 and 4
+
+                Order order = new Order(
+                        1, isDelivery, Arrays.asList(101, 102),
+                        Arrays.asList("No onions"), buyer, orderDate,
+                        20 + (random.nextDouble() * 30)
+                );
+                order.setStatus(randomStatus);
+                session.save(order);
+            }
+
+            // Insert 10 Table Orders (Always Branch ID 1)
+            for (int i = 0; i < 10; i++) {
+                int numOfPeople = random.nextInt(6) + 1;
+                calendar.set(Calendar.DAY_OF_MONTH, random.nextInt(daysInPrevMonth) + 1);
+                Date startDate = calendar.getTime();
+                calendar.add(Calendar.HOUR, 2);
+                Date endDate = calendar.getTime();
+
+                BuyerDetails tableBuyer = new BuyerDetails(
+                        "Customer" + i, "Table Address " + i, "999888777" + i,
+                        "TableUser" + i, "5111-2222-3333-444" + i, 9, 2027, "456"
+                );
+
+                int randomStatus = random.nextInt(5); // Random status between 0 and 4
+
+                TableOrder tableOrder = new TableOrder(
+                        numOfPeople, 1, null,
+                        startDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime(),
+                        endDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime(),
+                        randomStatus, WhoSubmittedBy.ORDERED, tableBuyer
+                );
+
+                session.save(tableOrder);
+            }
+
+            // Insert 10 Complaints (Always Branch ID 1)
+            for (int i = 0; i < 10; i++) {
+                calendar.set(Calendar.DAY_OF_MONTH, random.nextInt(daysInPrevMonth) + 1);
+                Date complaintDate = calendar.getTime();
+
+                BuyerDetails buyer = new BuyerDetails(
+                        "Customer" + i, "Address " + i, "987654321" + i,
+                        "User" + i, "4000-0000-0000-000" + i, 12, 2026, "999"
+                );
+
+                int randomStatus = random.nextInt(3); // Random status between 0 (waiting) and 2 (auto-handled)
+                int randomRefund = random.nextInt(100); // Random refund amount
+
+                Complaint complaint = new Complaint(
+                        "Issue " + i, complaintDate, 1, buyer, "a"
+                );
+                complaint.setStatus(randomStatus);
+                complaint.setRefund(randomRefund);
+
+                session.save(complaint);
+            }
+
+            transaction.commit();
+            System.out.println("✅ Test data inserted successfully for Branch ID 1.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("❌ Error inserting test data: " + e.getMessage());
+        }
+    }
+
 }
+
+
+

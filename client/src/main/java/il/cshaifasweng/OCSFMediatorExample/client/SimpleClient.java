@@ -8,9 +8,11 @@ import org.greenrobot.eventbus.EventBus;
 import il.cshaifasweng.OCSFMediatorExample.client.ocsf.AbstractClient;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+
 
 public class SimpleClient extends AbstractClient {
 
@@ -21,11 +23,11 @@ public class SimpleClient extends AbstractClient {
     public static List<BranchEnt> BranchList;
     public static int userID = -1;
     public static int ruleID = -1;
+    public static List<Integer> userBranchesIdList = new ArrayList<Integer>();// the branches the user works at
 
     private SimpleClient(String host, int port) {
         super(host, port);
     }
-
 
     @Override
     protected void handleMessageFromServer(Object msg) {
@@ -42,14 +44,20 @@ public class SimpleClient extends AbstractClient {
                     // payload[0] = boolean success
                     // payload[1] = int workerId
                     boolean success = (boolean) payload[0];
-
                     if (success) {
                         int workerId = (int) payload[1];
                         int rule = (int) payload[2];
-
+                        List<Integer> userBranchesId = (List<Integer>) payload[3];
                         //Setting the local rules.
                         userID = workerId;
                         ruleID = rule;
+                        if(ruleID == 4){// CEO has access to all of the branches
+                            userBranchesIdList = BranchList.stream() .map(BranchEnt::getId).toList(); // get all branches id to userbranchesID
+
+                        }else{
+                            userBranchesIdList = userBranchesId;
+                        }
+
                         System.out.println("Client: Login success! Worker ID = " + workerId + " Rule ID = " + rule);
                         EventBus.getDefault().post(new WarningEvent(new Warning("Login Success!")));
                         EventBus.getDefault().post(new LoginEvent(workerId, rule));
@@ -145,6 +153,12 @@ public class SimpleClient extends AbstractClient {
                     break;
                 }
 
+                case "branch report response":{
+                    BranchReportEnt branchReport = (BranchReportEnt) payload[0];
+                    EventBus.getDefault().post(new BranchReportEvent(branchReport));
+                    System.out.println("received branch report ");
+                    break;
+                }
 
                 // If you want server to respond with a "menuResponse" message, do it here
                 // case "menuResponse": { ... } break;
@@ -258,8 +272,8 @@ public class SimpleClient extends AbstractClient {
     }
 
     // need to add buyer details?
-    public void sendComplaint(String complaintText, Date date, String name, String address, String phone, String userID, String cardNumber, Integer month,Integer  year, String cvv) throws IOException {
-        Message message = new Message("complaint", new Object[]{complaintText, date, name, address, phone, userID, cardNumber, month, year, cvv});
+    public void sendComplaint(String complaintText, Date date, int branchId, String name, String address, String phone, String userID, String cardNumber, Integer month,Integer  year, String cvv, String email) throws IOException {
+        Message message = new Message("complaint", new Object[]{complaintText, date, branchId, name, address, phone, userID, cardNumber, month, year, cvv, email});
         sendToServer(message);
     }
     public static SimpleClient getClient() {
@@ -273,9 +287,15 @@ public class SimpleClient extends AbstractClient {
         Message message = new Message("get complaints", new Object[]{});
         sendToServer(message);
     }
-    public void sendHandleComplaint(int complaintID, int refund) throws Exception {
+    public void sendHandleComplaint(int complaintID, double refund) throws Exception {
         Message message = new Message("handle complaint", new Object[]{complaintID, refund});
         sendToServer(message);
     }
+
+    public void sendGetBranchReport(int year, int month, int branchID) throws Exception {
+        Message message = new Message("get branch report", new Object[]{year, month, branchID});
+        sendToServer(message);
+    }
+
 
 }

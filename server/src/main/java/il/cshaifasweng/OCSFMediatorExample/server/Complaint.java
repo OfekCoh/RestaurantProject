@@ -20,25 +20,36 @@ public class Complaint {
     private BuyerDetails buyerDetails;
 
     private int status; // state of complaint: 0 - waiting, 1 - handled by worker, 2 - handled automatically
-    private int refund; // how much was refunded
+    private double refund; // how much was refunded
+    private int branchId;
+    private String email;
 
-    // Constructors
+    // Constructor
     public Complaint() {
     }
 
-    public Complaint(String complaint, Date date, BuyerDetails buyerDetails) {
+    public Complaint(String complaint, Date date, int branchId, BuyerDetails buyerDetails, String email) {
+        this.branchId = branchId;
         this.complaint = complaint;
         this.date = date;
         this.buyerDetails = buyerDetails;
         this.status = 0;
         this.refund = 0;
+        this.email = email;
     }
 
     // Getters and setters
+    public void setEmail(String email) { this.email = email;}
 
-    public int getRefund() { return refund;}
+    public String getEmail() { return email;}
 
-    public void setRefund(int refund) { this.refund = refund;}
+    public int getBranchId() { return branchId;}
+
+    public void setBranchName(int branchID) { this.branchId = branchId;}
+
+    public double getRefund() { return refund;}
+
+    public void setRefund(double refund) { this.refund = refund;}
 
     public int getStatus() { return this.status; }
 
