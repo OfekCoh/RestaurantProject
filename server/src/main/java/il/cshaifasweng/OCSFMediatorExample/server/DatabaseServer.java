@@ -286,13 +286,13 @@ public class DatabaseServer {
         }
     }
 
-    public static List<TableSchema> getAllTables() throws Exception {
+    public static List<TableSchema> getAllBranchTables(int branchId) throws Exception {
         try (Session session = getSessionFactory().openSession()) {
             CriteriaBuilder builder = session.getCriteriaBuilder();
             CriteriaQuery<TableSchema> query = builder.createQuery(TableSchema.class);
             Root<TableSchema> root = query.from(TableSchema.class);
 
-            query.select(root).distinct(true); // Ensure distinct branches
+            query.select(root).distinct(true).where(builder.equal(root.get("branch").get("id"), branchId));
             return session.createQuery(query).getResultList();
 
         } catch (Exception e) {
@@ -404,7 +404,7 @@ public class DatabaseServer {
         if (whoSubmitted == WhoSubmittedBy.HOSTESS) return addOrder(newOrder);
 
         // will check if there are still available tables (and other client didn't submit them)
-        List<Integer> availableTablesIds= checkAvailableTables(newOrder.getBranchId(), newOrder.getDate(), newOrder.getTime(), newOrder.getNumberOfGuests(), newOrder.getLocation());
+        List<Integer> availableTablesIds= checkAvailableTables(newOrder.getBranchId(), newOrder.getDate(), newOrder.getTime(), newOrder.getNumberOfGuests(), newOrder.getLocation(), false);
         List<TableSchema> tables= getTablesWithIds(availableTablesIds);
         System.out.println("new availableTablesIds: " + availableTablesIds); // just to check in case the tables have been changed
 
@@ -522,7 +522,31 @@ public class DatabaseServer {
         }
     }
 
-    public static List<Integer> checkAvailableTables(int branchId, String date, String time, int numberOfDiners, String location) {
+    public static List<TableSchema> getTablesForMap(int branchId) throws Exception{
+        // get current date
+        String todayDate = LocalDate.now().toString();
+
+        // get current time rounded up to nearest 15 minutes
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        LocalTime currentTime = LocalTime.now();
+        int minutes = currentTime.getMinute();
+        int extraMinutes = 15 - (minutes % 15);
+        LocalTime roundedUp= currentTime.plusMinutes(extraMinutes == 15 ? 0 : extraMinutes).withSecond(0).withNano(0);
+        String time = roundedUp.format(timeFormatter);
+
+        // get available tables for current time and branch
+        List<Integer> indoorTables= checkAvailableTables(branchId, todayDate, time, 0, "INDOOR", true);
+        List<Integer> outdoorTables= checkAvailableTables(branchId, todayDate, time, 0, "OUTDOOR", true);
+
+        // merge both lists
+        List<Integer> availableTables = new ArrayList<>(indoorTables);
+        availableTables.addAll(outdoorTables);
+
+        // return the tables according to ids
+        return getTablesWithIds(availableTables);
+    }
+
+    public static List<Integer> checkAvailableTables(int branchId, String date, String time, int numberOfDiners, String location, boolean forMap) {
         List<Integer> availableTables = new ArrayList<>();
         List<Integer> numberOfDinersList = new ArrayList<>();  // the indexes will match between the table id and its size
 
@@ -563,6 +587,8 @@ public class DatabaseServer {
 
             // Execute the query and store the result in availableTables
             availableTables = query.getResultList();
+
+            if(forMap) return availableTables; // this returns all the free tables (and not just the ones for the order)
 
             // For every table in the list add its size to numberOfDinersList
             for (Integer tableId : availableTables) {
@@ -943,7 +969,7 @@ public class DatabaseServer {
             List<Complaint> oldComplaints = session.createQuery(selectQuery).getResultList();
 
             if (oldComplaints.isEmpty()) {
-                System.out.println("No complaints found that require automatic handling.");
+//                System.out.println("No complaints found that require automatic handling.");
                 transaction.commit();
                 return false; // No complaints were updated
             }

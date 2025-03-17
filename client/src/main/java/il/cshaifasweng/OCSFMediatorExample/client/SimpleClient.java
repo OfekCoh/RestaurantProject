@@ -196,6 +196,14 @@ public class SimpleClient extends AbstractClient {
                     break;
                 }
 
+                case "TablesForMapResponse": {
+                    // this return tables available and tables taken at the current time
+                    List<TableEnt> availableTables= (List<TableEnt>) payload[0];
+                    List<TableEnt> takenTables= (List<TableEnt>) payload[1];
+
+                    // TODO!  (get here from sendGetTablesForMap() func below)
+                }
+
                 case "complaints response": {
                     List<ComplaintEnt> complaints = (List<ComplaintEnt>) payload[0];
                     EventBus.getDefault().post(new ComplaintEvent(complaints));
@@ -406,6 +414,11 @@ public class SimpleClient extends AbstractClient {
                 TableOrderManage.getNumberOfGuests(),
                 TableOrderManage.getLocation(),
                 name, address, phone, userID, cardNumber, month, year, cvv});
+        sendToServer(message);
+    }
+
+    public void sendGetTablesForMap(int branchId) throws IOException {
+        Message message = new Message("get tables for map", new Object[]{branchId});
         sendToServer(message);
     }
 

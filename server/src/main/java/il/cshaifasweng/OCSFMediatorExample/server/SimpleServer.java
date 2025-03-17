@@ -16,6 +16,8 @@ import java.util.concurrent.TimeUnit;
 
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.SubscribedClient;
 
+import javax.xml.crypto.Data;
+
 public class SimpleServer extends AbstractServer {
     private static ArrayList<SubscribedClient> SubscribersList = new ArrayList<>();
     private DatabaseServer databaseServer;
@@ -527,7 +529,7 @@ public class SimpleServer extends AbstractServer {
                             // print to console
                             System.out.println("Received table check request: Branch=" + branchId + ", Date=" + date + ", Time=" + time + ", Guests=" + numberOfGuests + ", Location=" + location);
 
-                            List<Integer> availableTablesIds = DatabaseServer.checkAvailableTables(branchId, date, time, numberOfGuests, location);
+                            List<Integer> availableTablesIds = DatabaseServer.checkAvailableTables(branchId, date, time, numberOfGuests, location, false);
                             if(availableTablesIds != null) System.out.println("availableTablesIds: " + availableTablesIds);
 
                             // Send response back to client
@@ -609,6 +611,39 @@ public class SimpleServer extends AbstractServer {
                     break;
                 }
 
+                case "get tables for map": {
+                    if (payload.length == 1) {
+                        try {
+                            int branchId = (int) payload[0];
+
+                            List<TableSchema> availableTables= DatabaseServer.getTablesForMap(branchId); // get available tables in branch
+                            List<TableSchema> allTables= DatabaseServer.getAllBranchTables(branchId); // get all tables in branch
+
+                            // get taken tables (this might look inefficient but keep in mind we only have like 20 tables in total so It's really nothing)
+                            List<TableSchema> takenTables = new ArrayList<>();
+                            for (TableSchema table : allTables) {
+                                if (!availableTables.contains(table)) {
+                                    takenTables.add(table);
+                                }
+                            }
+
+                            // convert tables to entities
+                            List<TableEnt> availableTablesEnt= Convertor.convertToTableEntList(availableTables);
+                            List<TableEnt> takenTablesEnt= Convertor.convertToTableEntList(takenTables);
+
+                            // print to console
+                            if(availableTablesEnt != null && takenTablesEnt != null) System.out.println("Retrieved tables");
+
+                            // Send response back to client
+                            Message response = new Message("TablesForMapResponse", new Object[]{availableTablesEnt, takenTablesEnt});
+                            client.sendToClient(response);
+                        }
+                        catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    break;
+                }
 
                 // -----------------------------------------------------------
                 // login
