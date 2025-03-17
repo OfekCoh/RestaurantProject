@@ -446,6 +446,7 @@ public class DatabaseServer {
 
             // Update order status
             order.setStatus(newStatus);
+            order.setTables(Collections.emptyList()); // free the tables
             session.update(order);
             transaction.commit();
 
