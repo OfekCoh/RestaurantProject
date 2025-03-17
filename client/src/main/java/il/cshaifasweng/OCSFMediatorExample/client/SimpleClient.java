@@ -160,7 +160,7 @@ public class SimpleClient extends AbstractClient {
                                 alert.show();
                             }
                             else if(status==2){ // paid cancellation success
-                                Alert alert = new Alert(Alert.AlertType.INFORMATION, ("Order canceled successfully.\nA $10 charge applies due to last-hour cancellation."));
+                                Alert alert = new Alert(Alert.AlertType.INFORMATION, ("Order canceled successfully.\nA ₪10 charge applies due to last-hour cancellation."));
                                 alert.show();
                             }
                             else { // -1 error

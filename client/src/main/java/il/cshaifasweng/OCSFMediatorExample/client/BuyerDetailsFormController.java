@@ -238,7 +238,7 @@ public class BuyerDetailsFormController {
                 totalCostLabel.setText(String.format("Total Cost: $%.2f", OrderManage.getFinalPrice()));
                 break;
             case "orderTable":
-                totalCostLabel.setText("Please note: If you cancel within the last hour, a $10 fee will be applied.");
+                totalCostLabel.setText("Please note: If you cancel within the last hour, a ₪10 fee will be applied.");
                 totalCostLabel.setStyle("-fx-font-size: 16; -fx-font-weight: normal;");
                 header.setText("Reservation for " + TableOrderManage.getNumberOfGuests() + " guests on " + TableOrderManage.getDate() + " at " + TableOrderManage.getTime() + ".");
                 break;
