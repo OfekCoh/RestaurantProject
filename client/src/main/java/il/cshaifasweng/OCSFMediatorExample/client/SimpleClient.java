@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-
 public class SimpleClient extends AbstractClient {
 
     public static SimpleClient client = null;
@@ -289,16 +288,13 @@ public class SimpleClient extends AbstractClient {
                     });
                     break;
                 }
-                // If you want server to respond with a "menuResponse" message, do it here
-                // case "menuResponse": { ... } break;
 
                 default:
                     System.out.println("Client: Unknown command from server: " + command);
                     break;
-
-
             }
         }
+
         // 2) Otherwise, check if it's a known entity like MenuEnt, Warning, etc.
 //        else if (msg instanceof MenuEnt) {
 //            MenuEnt menu = (MenuEnt) msg;
@@ -432,16 +428,9 @@ public class SimpleClient extends AbstractClient {
         sendToServer(message);
     }
 
-    // need to add buyer details?
     public void sendComplaint(String complaintText, Date date, int branchId, String name, String address, String phone, String userID, String cardNumber, Integer month,Integer  year, String cvv, String email) throws IOException {
         Message message = new Message("complaint", new Object[]{complaintText, date, branchId, name, address, phone, userID, cardNumber, month, year, cvv, email});
         sendToServer(message);
-    }
-    public static SimpleClient getClient() {
-        if (client == null) {
-            client = new SimpleClient(ip, port);
-        }
-        return client;
     }
 
     public void sendGetComplaints() throws Exception {
@@ -458,5 +447,11 @@ public class SimpleClient extends AbstractClient {
         sendToServer(message);
     }
 
+    public static SimpleClient getClient() {
+        if (client == null) {
+            client = new SimpleClient(ip, port);
+        }
+        return client;
+    }
 
 }

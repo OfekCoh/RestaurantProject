@@ -7,29 +7,21 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Objects;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
 
 public class BuyerDetailsFormController {
 
-    private static String callerType; // who called me.
-    @FXML
-    private Label header;
+    // who called this page
+    private static String callerType;
+
+    // Person Info
     @FXML
     private TextField nameField;
     @FXML
     private TextField phoneField;
     @FXML
     private TextField addressField;
-
-    @FXML
-    private Label adressLabel;
-
-
-    @FXML
-    private Label emailLabel;
-
     @FXML
     private TextField emailText;
 
@@ -44,14 +36,24 @@ public class BuyerDetailsFormController {
     private ComboBox<Integer> yearCombo;
     @FXML
     private TextField cvvField;
+
+    // Labels
+    @FXML
+    private Label header;
+    @FXML
+    private Label adressLabel;
+    @FXML
+    private Label emailLabel;
     @FXML
     private Label totalCostLabel;
 
+    // Buttons
     @FXML
     private Button submitButton;
     @FXML
     private Button backButton;
 
+    // Methods
     @FXML
     void initialize() {
         // 1) Fill month/year combos from current date => next 10 years
@@ -161,14 +163,14 @@ public class BuyerDetailsFormController {
                 "ID: %s, Card#: %s, Expiry: %02d/%d, CVV: %s%n",
                 userID, cardNumber, month, year, cvv
         );
-        //If we got here, it means everything checks out, so we will submit the order.
 
+        //If we got here, it means everything checks out, so we will submit the order.
         // -------  continue based on callerType  -------
         switch (callerType) {
 
             case "cart":
-                //I know it's possible to make it shorter similiar to the idea of my paylod in messages, but I prefer to currently leave it as it and not to "compress" it for future changes that may be needed.
-                //List<Integer> dishIds, List<String> Adaptaions, String OrderType, int selectedBranch, Date orderDate, Double finalPrice, String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv
+                //I know it's possible to make it shorter similar to the idea of my payload in messages, but I prefer to currently leave it as it and not to "compress" it for future changes that may be needed.
+                //List<Integer> dishIds, List<String> Adaptations, String OrderType, int selectedBranch, Date orderDate, Double finalPrice, String name, String address, String phone, String userId, String cardNumber, int month, int year, String cvv
                 try {
                     SimpleClient.getClient().sendAddOrder(OrderManage.getDishIds(),OrderManage.getAdaptations(),OrderManage.getOrderType(),OrderManage.getSelectedBranch(),OrderManage.getOrderDate(),OrderManage.getFinalPrice(),name,address,phone,userID,cardNumber,month,year,cvv);
                 } catch (IOException e) {
@@ -243,7 +245,8 @@ public class BuyerDetailsFormController {
                 header.setText("Reservation for " + TableOrderManage.getNumberOfGuests() + " guests on " + TableOrderManage.getDate() + " at " + TableOrderManage.getTime() + ".");
                 break;
             case "complaint":
-                totalCostLabel.setVisible(false);
+                totalCostLabel.setText("No charges will be made - this is only for a potential refund.");
+                totalCostLabel.setStyle("-fx-font-size: 16; -fx-font-weight: normal;");
                 addressField.setVisible(false);
                 emailLabel.setVisible(true);
                 emailText.setVisible(true);
