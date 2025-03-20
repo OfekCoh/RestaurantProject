@@ -148,7 +148,7 @@ public class SelectDeliveryLocationController {
 
         // Generate 15-minute time slots from startTime until at least 30 minutes before closing.
         List<String> timeSlots = new ArrayList<>();
-        LocalTime slot = startTime;
+        LocalTime slot = startTime.withSecond(0).withNano(0);
         while (!slot.isAfter(closeTime.minusMinutes(30))) {
             timeSlots.add(slot.format(timeFormatter));
             slot = slot.plusMinutes(15);
