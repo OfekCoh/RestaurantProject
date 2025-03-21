@@ -1,5 +1,6 @@
 package il.cshaifasweng.OCSFMediatorExample.server;
 
+import com.mysql.cj.xdevapi.Client;
 import il.cshaifasweng.OCSFMediatorExample.entities.*;
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.AbstractServer;
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.ConnectionToClient;
@@ -15,11 +16,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.SubscribedClient;
+import org.dom4j.Branch;
 
 import javax.xml.crypto.Data;
 
 public class SimpleServer extends AbstractServer {
     private static ArrayList<SubscribedClient> SubscribersList = new ArrayList<>();
+    private final int schedulerIntervals = 1;// minuets between each checks interval
     private DatabaseServer databaseServer;
 
     public SimpleServer(int port, String databasePassword) {
@@ -27,7 +30,7 @@ public class SimpleServer extends AbstractServer {
         DatabaseServer.password = databasePassword;
         // create the database
         databaseServer = new DatabaseServer(databasePassword);
-        startComplaintChecker();
+        startChecksScheduler();
     }
 
     @Override
@@ -616,26 +619,7 @@ public class SimpleServer extends AbstractServer {
                         try {
                             int branchId = (int) payload[0];
 
-                            List<TableSchema> availableTables= DatabaseServer.getTablesForMap(branchId); // get available tables in branch
-                            List<TableSchema> allTables= DatabaseServer.getAllBranchTables(branchId); // get all tables in branch
-
-                            // get taken tables (this might look inefficient but keep in mind we only have like 20 tables in total so It's really nothing)
-                            List<TableSchema> takenTables = new ArrayList<>();
-                            for (TableSchema table : allTables) {
-                                if (!availableTables.contains(table)) {
-                                    takenTables.add(table);
-                                }
-                            }
-
-                            // convert tables to entities
-                            List<TableEnt> availableTablesEnt= Convertor.convertToTableEntList(availableTables);
-                            List<TableEnt> takenTablesEnt= Convertor.convertToTableEntList(takenTables);
-
-                            // print to console
-                            if(availableTablesEnt != null && takenTablesEnt != null) System.out.println("Retrieved tables");
-
-                            // Send response back to client
-                            Message response = new Message("TablesForMapResponse", new Object[]{availableTablesEnt, takenTablesEnt});
+                            Message response = getCurrentAvailableTablesInBranch(branchId);
                             client.sendToClient(response);
                         }
                         catch (Exception e) {
@@ -834,17 +818,65 @@ public class SimpleServer extends AbstractServer {
         }
     }
 
+    // prepare a message for restaurant map of branch id (longest function name in the code?)
+    private Message getCurrentAvailableTablesInBranch(int branchId) throws Exception {
+
+        List<TableSchema> availableTables= DatabaseServer.getTablesForMap(branchId); // get available tables in branch
+        List<TableSchema> allTables= DatabaseServer.getAllBranchTables(branchId); // get all tables in branch
+
+        // get taken tables (this might look inefficient but keep in mind we only have like 20 tables in total so It's really nothing)
+        boolean availabe = false;
+        List<TableSchema> takenTables = new ArrayList<>();
+        for (TableSchema table : allTables) {
+            for(TableSchema availableTable : availableTables) {
+                if (availableTable.getTableId() == table.getTableId()) {
+                    availabe = true;
+                    break;
+                }
+            }
+            if(!availabe){
+                takenTables.add(table);
+            }
+            availabe = false;
+        }
+
+        // convert tables to entities
+        List<TableEnt> availableTablesEnt= Convertor.convertToTableEntList(availableTables);
+        List<TableEnt> takenTablesEnt= Convertor.convertToTableEntList(takenTables);
+
+        System.out.println("sent Tables number: " + availableTablesEnt.size() + takenTablesEnt.size());
+
+        // print to console
+        if(availableTablesEnt != null && takenTablesEnt != null) System.out.println("Retrieved tables");
+
+        // Send response back to client
+        Message response = new Message("TablesForMapResponse", new Object[]{availableTablesEnt, takenTablesEnt, branchId});
+        return response;
+    }
+
     // check complaints periodically to auto handle complaints older than 24 hours
-    private void startComplaintChecker() {
+    private void startChecksScheduler() {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
         scheduler.scheduleAtFixedRate(() -> {
             boolean complaintsUpdated = DatabaseServer.autoHandleOldComplaints();
+
+            // Check to update open table maps
+            try {
+                for(int i = 0; i < DatabaseServer.getMaxBranchId(); i++){
+                   Message response = getCurrentAvailableTablesInBranch(i + 1); // each cell i represnt i+1 branch
+                    sendToAllClients(response);
+                }
+
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
 
             // Only notify clients if complaints were updated
             if (complaintsUpdated) {
                 System.out.println("Auto-handled complaints. Notifying clients..."); // should i notify clients?
 
             }
-        }, 0,  1, TimeUnit.MINUTES);
+        }, 0,  schedulerIntervals, TimeUnit.MINUTES);
     }
 }

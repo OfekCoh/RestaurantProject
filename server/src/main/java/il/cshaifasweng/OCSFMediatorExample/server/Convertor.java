@@ -1,7 +1,7 @@
 package il.cshaifasweng.OCSFMediatorExample.server;
 
 import il.cshaifasweng.OCSFMediatorExample.entities.*;
-import org.hibernate.mapping.Table;
+
 
 import java.util.ArrayList;
 import java.util.List;

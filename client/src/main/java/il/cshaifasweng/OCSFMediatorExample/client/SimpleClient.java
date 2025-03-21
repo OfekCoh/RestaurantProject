@@ -199,8 +199,10 @@ public class SimpleClient extends AbstractClient {
                     // this return tables available and tables taken at the current time
                     List<TableEnt> availableTables= (List<TableEnt>) payload[0];
                     List<TableEnt> takenTables= (List<TableEnt>) payload[1];
+                    int branchId = (int) payload[2];
+                    System.out.println("Received Tables For Map Response");
+                    EventBus.getDefault().post(new RestaurantMapEvent(takenTables, availableTables, branchId));
 
-                    // TODO!  (get here from sendGetTablesForMap() func below)
                 }
 
                 case "complaints response": {

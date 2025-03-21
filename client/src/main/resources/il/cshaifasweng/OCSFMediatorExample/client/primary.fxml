@@ -20,7 +20,7 @@
             <Button fx:id="complaintHandleButton" mnemonicParsing="false" onAction="#switchToComplaintHandler" prefHeight="30.0" prefWidth="95.0" text="טיפול בתלונה" />
             <Button fx:id="allocateSpaceButton" mnemonicParsing="false" onAction="#switchToSpaceAllocation" prefHeight="30.0" prefWidth="95.0" text="הקצאת מקום" />
             <Button fx:id="Branch" mnemonicParsing="false" onAction="#switchToMenuView" prefHeight="30.0" prefWidth="85.0" text="עדכון תפריט" />
-            <Button fx:id="resturantMap" mnemonicParsing="false" onAction="#switchToResturantMap" prefHeight="30.0" prefWidth="95.0" text="מפת מסעדה" />
+            <Button fx:id="resturantMap" mnemonicParsing="false" onAction="#switchToRestaurantMap" prefHeight="30.0" prefWidth="95.0" text="מפת מסעדה" />
          </children>
       </HBox>
       <VBox alignment="CENTER" prefHeight="280.0" prefWidth="336.0" spacing="20.0">

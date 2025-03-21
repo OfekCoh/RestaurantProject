@@ -16,6 +16,8 @@ import java.util.List;
 
 public class BranchSelectionController {
 
+    private static String next = "dish"; // Which fxml to move after selection
+
     private List<BranchEnt> branches;
 
     private static final String[] DAYS_OF_WEEK = {
@@ -30,6 +32,11 @@ public class BranchSelectionController {
 
     @FXML
     private ScrollPane scrollPane;
+
+
+    public static void setNextWindow(String nextWindow){
+        next = nextWindow;
+    }
 
 
     @FXML
@@ -97,8 +104,15 @@ public class BranchSelectionController {
                 .orElse("Unknown Branch");
         DishSelectionController.setSelectedBranchName(branchName);
         try{
-            DishSelectionController.setSelectedBranch(branchId);
-            App.setRoot("dishSelection");
+            if(next.equals("restaurant map")){
+                RestaurantMapController.setBranchId(branchId);
+                App.setRoot("restaurantMap");
+            }
+            if(next.equals("dish selection")){
+                DishSelectionController.setSelectedBranch(branchId);
+                App.setRoot("dishSelection");
+            }
+
 
         } catch (IOException e) {
             throw new RuntimeException(e);

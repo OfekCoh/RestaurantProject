@@ -75,6 +75,7 @@ public class PrimaryController {
     @FXML
     void switchToMenu(ActionEvent event) throws Exception {
         SimpleClient.getClient().sendGetMenuCommand();
+        BranchSelectionController.setNextWindow("dish selection");
         App.setRoot("branchSelection");
     }
 
@@ -102,8 +103,9 @@ public class PrimaryController {
     }
 
     @FXML
-    void switchToResturantMap(ActionEvent event) throws Exception {
-        SimpleClient.getClient().sendGetMenuCommand();
+    void switchToRestaurantMap(ActionEvent event) throws Exception {
+        //SimpleClient.getClient().sendGetMenuCommand();
+        BranchSelectionController.setNextWindow("restaurant map");
         App.setRoot("branchSelection");
     }
 

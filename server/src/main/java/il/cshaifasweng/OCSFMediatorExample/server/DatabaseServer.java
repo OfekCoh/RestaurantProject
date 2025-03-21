@@ -542,6 +542,7 @@ public class DatabaseServer {
         List<Integer> availableTables = new ArrayList<>(indoorTables);
         availableTables.addAll(outdoorTables);
 
+
         // return the tables according to ids
         return getTablesWithIds(availableTables);
     }
@@ -1249,6 +1250,24 @@ public class DatabaseServer {
             System.err.println("Error inserting test data: " + e.getMessage());
         }
     }
+
+    // Fetch the maximum branch ID from the database, to find number of branches
+    public static Integer getMaxBranchId() {
+        Integer maxId = null;
+        try (Session session = getSessionFactory().openSession()) {
+            // Create the query to get the max branch ID
+            Query<Integer> query = session.createQuery("SELECT MAX(r.id) FROM RestaurantBranch r", Integer.class);
+            maxId = query.uniqueResult();
+        } catch (Exception e) {
+            System.err.println("Error fetching max branch ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+        if (maxId == null){
+            return  0;
+        }  // Return 0 if no branches exist
+        return maxId;
+    }
+
 
 }
 
