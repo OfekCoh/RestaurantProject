@@ -1268,6 +1268,40 @@ public class DatabaseServer {
         return maxId;
     }
 
+    // Get the branch id from the order's id
+    public static int getBranchIdFromTableOrderId(int tableOrderId) {
+        try (Session session = getSessionFactory().openSession()) {
+            TableOrder tableOrder = session.get(TableOrder.class, tableOrderId);
+            if (tableOrder != null) {
+                return tableOrder.getBranchId();
+            } else {
+                System.err.println("No TableOrder found with ID: " + tableOrderId);
+                return -1; // or throw exception depending on your design
+            }
+        } catch (Exception e) {
+            System.err.println("Error retrieving TableOrder: " + e.getMessage());
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
+    // Recieve branch opening hours from branch id
+    public static List<String> getBranchOpeningHours(int branchId) {
+        try (Session session = getSessionFactory().openSession()) {
+            RestaurantBranch branch = session.get(RestaurantBranch.class, branchId);
+            if (branch != null) {
+                Hibernate.initialize(branch.getOpeningHours()); // Ensure it's loaded before session closes
+                return branch.getOpeningHours();
+            } else {
+                System.err.println("Branch not found for ID: " + branchId);
+                return Collections.emptyList();
+            }
+        } catch (Exception e) {
+            System.err.println("Error retrieving opening hours: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
 
 }
 

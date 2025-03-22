@@ -21,13 +21,14 @@ public class SimpleServer extends AbstractServer {
     private static ArrayList<SubscribedClient> SubscribersList = new ArrayList<>();
     private final int schedulerIntervals = 1;// minuets between each checks interval
     private DatabaseServer databaseServer;
-
+    private int maxBranchId;
     public SimpleServer(int port, String databasePassword) {
         super(port);
         DatabaseServer.password = databasePassword;
         // create the database
         databaseServer = new DatabaseServer(databasePassword);
-        startChecksScheduler();
+        maxBranchId = DatabaseServer.getMaxBranchId();
+        startChecksScheduler(); // Start automatic checks
     }
 
     @Override
@@ -500,7 +501,8 @@ public class SimpleServer extends AbstractServer {
                                 Message response = new Message("cancel table order response", new Object[]{status});
                                 client.sendToClient(response);
                                 // update map
-                                //response = getCurrentAvailableTablesInBranch();
+                                response = getCurrentAvailableTablesInBranch(DatabaseServer.getBranchIdFromTableOrderId(orderId));
+                                sendToAllClients(response);
                             } else {
                                 Warning failMsg = new Warning("Failed to cancel order!");
                                 client.sendToClient(failMsg);
@@ -591,8 +593,8 @@ public class SimpleServer extends AbstractServer {
                                 Message response = new Message("TableOrderResponse", new Object[]{orderId});
                                 client.sendToClient(response);
                                 //update map at client
-                                //response = getCurrentAvailableTablesInBranch();
-                                //sendToAllClients(response);
+                                response = getCurrentAvailableTablesInBranch(branchId);
+                                sendToAllClients(response);
 
                             } else if(orderId == -1){  // fail to save to database
                                 Warning failMsg = new Warning("Failed to add order! Please try again.");
@@ -863,38 +865,58 @@ public class SimpleServer extends AbstractServer {
         scheduler.scheduleAtFixedRate(() -> {
             boolean complaintsUpdated = DatabaseServer.autoHandleOldComplaints();
 
-            // Get current time
             Calendar calendar = Calendar.getInstance();
             int minute = calendar.get(Calendar.MINUTE);
+            int hour = calendar.get(Calendar.HOUR_OF_DAY);
+            int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK); // Sunday = 1, Saturday = 7
 
-            // Only run table availability check if current minute is 0, 15, 30, or 45
-            if (minute % 15 == 0) {
+            // Adjust day index to match openingHours list (0 = Monday, 6 = Sunday)
+            int openingHoursIndex = (dayOfWeek + 5) % 7;
+
+            if (minute % 15 == 0) { // Check every round 15 minuets: 0, 15,30,45 of the hour
                 try {
-                    for (int i = 0; i < DatabaseServer.getMaxBranchId(); i++) {
-                        Message response = getCurrentAvailableTablesInBranch(i + 1); // each cell i represents i+1 branch
-                        sendToAllClients(response);
+
+                    // go over all of the branches
+                    for (int branchId = 1; branchId <= maxBranchId; branchId++) {
+                        List<String> openingHours = DatabaseServer.getBranchOpeningHours(branchId);
+
+                        if (openingHours == null || openingHours.size() <= openingHoursIndex) continue;
+
+                        String hoursToday = openingHours.get(openingHoursIndex);
+                        if (hoursToday == null || hoursToday.equalsIgnoreCase("Closed")) continue;
+
+                        // Parse opening and closing times
+                        String[] parts = hoursToday.split("-");
+                        if (parts.length != 2) continue;
+
+                        int openHour = Integer.parseInt(parts[0].split(":")[0]);
+                        int openMinute = Integer.parseInt(parts[0].split(":")[1]);
+                        int closeHour = Integer.parseInt(parts[1].split(":")[0]);
+                        int closeMinute = Integer.parseInt(parts[1].split(":")[1]);
+
+                        Calendar openTime = (Calendar) calendar.clone();
+                        openTime.set(Calendar.HOUR_OF_DAY, openHour);
+                        openTime.set(Calendar.MINUTE, openMinute);
+
+                        Calendar closeTime = (Calendar) calendar.clone();
+                        closeTime.set(Calendar.HOUR_OF_DAY, closeHour);
+                        closeTime.set(Calendar.MINUTE, closeMinute);
+
+                        // Run check only if current time is within opening hours
+                        if (calendar.after(openTime) && calendar.before(closeTime)) {
+                            Message response = getCurrentAvailableTablesInBranch(branchId);
+                            sendToAllClients(response);
+                        }
                     }
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    e.printStackTrace();
                 }
             }
 
-            // Check to update open table maps
-            try {
-                for(int i = 0; i < DatabaseServer.getMaxBranchId(); i++){
-                   Message response = getCurrentAvailableTablesInBranch(i + 1); // each cell i represnt i+1 branch
-                    sendToAllClients(response);
-                }
-
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
-            // Only notify clients if complaints were updated
             if (complaintsUpdated) {
-                System.out.println("Auto-handled complaints. Notifying clients..."); // should i notify clients?
-
+                System.out.println("Auto-handled complaints. Notifying clients...");
             }
-        }, 0,  schedulerIntervals, TimeUnit.MINUTES);
+        }, 0, schedulerIntervals, TimeUnit.MINUTES);
     }
+
 }
