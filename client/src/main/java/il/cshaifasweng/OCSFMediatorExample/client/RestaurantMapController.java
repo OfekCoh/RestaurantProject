@@ -42,11 +42,17 @@ public class RestaurantMapController {
     // Receive available and taken table lists from server using EventBus
     @Subscribe
     public void onRestaurantMapEvent(RestaurantMapEvent event) {
+        System.out.println("RestaurantMapEvent "+ branchId);
+        // Only queue the UI update if it's for the right branch
+        if (event.getBranchId() != branchId) {
+            System.out.println("Skipping event: expected branch " + branchId + ", but got " + event.getBranchId());
+            return;
+        }
+
         Platform.runLater(() -> {
             System.out.println("Received new restaurant map event");
-            if(branchId == event.getBranchId()){// Checks if this branch map was recieved
-                updateTables(event.getAvailableTables(), event.getTakenTables());// update grid according to tables
-            }
+            updateTables(event.getAvailableTables(), event.getTakenTables());// update grid according to tables
+
         });
     }
 
@@ -54,6 +60,9 @@ public class RestaurantMapController {
     public void initialize() {
         // register to event bus to receive complaints
         EventBus.getDefault().register(this);
+        System.out.println("here0");
+        tablesArray = null;
+        availabilityArray = null;
         try {
             SimpleClient.getClient().sendGetTablesForMap(RestaurantMapController.branchId);
             System.out.println("Sent request to get table for map");
@@ -67,7 +76,9 @@ public class RestaurantMapController {
             // If this is the first update, initialize the arrays and fill the grid
             if (tablesArray == null) {
                 initializeTableArrays(newFreeTables, newTakenTables);
+                System.out.println("here1");
                 fillGrid();
+                System.out.println("here2");
                 return;
             }
 
@@ -93,7 +104,7 @@ public class RestaurantMapController {
     // This function is called only once when the first update arrives to initilize the arrays
     private void initializeTableArrays(List<TableEnt> freeTables, List<TableEnt> takenTables) {
         System.out.println("Initializing table arrays");
-        System.out.println(freeTables.size());
+
         // number of tables in the branch
         int num_of_tables = freeTables.size() + takenTables.size();
 
@@ -106,9 +117,11 @@ public class RestaurantMapController {
         if(!takenTables.isEmpty()){
             first_taken_table_id = takenTables.getFirst().getTableId();
         }
+        System.out.println(takenTables.size());
 
         minTableId = Math.min(first_available_table_id, first_taken_table_id);
-        System.out.println("Number of tables: " + num_of_tables);
+        System.out.println("Number of tables: " + num_of_tables +"minimum id: " + minTableId);
+
         // create arrays
         tablesArray = new TableEnt[num_of_tables];
         availabilityArray = new boolean[num_of_tables];
@@ -224,5 +237,6 @@ public class RestaurantMapController {
         //SimpleClient.getClient().sendGetMenuCommand();
         BranchSelectionController.setNextWindow("restaurant map");
         App.setRoot("branchSelection");
+        EventBus.getDefault().unregister(this);
     }
 }

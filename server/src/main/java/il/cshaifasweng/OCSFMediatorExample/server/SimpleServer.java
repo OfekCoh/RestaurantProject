@@ -622,7 +622,7 @@ public class SimpleServer extends AbstractServer {
                     if (payload.length == 1) {
                         try {
                             int branchId = (int) payload[0];
-
+                            System.out.println("Received table check request: Branch=" + branchId + ", Date=" + payload[0]);
                             Message response = getCurrentAvailableTablesInBranch(branchId);
                             client.sendToClient(response);
                         }
@@ -713,7 +713,6 @@ public class SimpleServer extends AbstractServer {
                         String cvv = (String) payload[10];
                         String email = (String) payload[11];
 
-                        System.out.println("here");
                         Complaint newComplaint = new Complaint(complaintText, date, branchID, new BuyerDetails(name, address, phone, userId, cardNum, cardMonth, cardYear, cvv), email);
                         try {
                             boolean result = DatabaseServer.addComplaint(newComplaint);
@@ -751,11 +750,10 @@ public class SimpleServer extends AbstractServer {
                     break;
 
                 }
-                // send all the complaints in the db in complaintEnt list
+                // send all the active complaints in the db in complaintEnt list
                 case "get complaints": {
                     try {
-                        List<ComplaintEnt> complaints = DatabaseServer.getComplaints();
-                        System.out.println("Complaints: " + complaints.size());
+                        List<ComplaintEnt> complaints = DatabaseServer.getActiveComplaints();
                         client.sendToClient(new Message("complaints response", new Object[]{complaints}));
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -815,6 +813,7 @@ public class SimpleServer extends AbstractServer {
     public void sendToAllClients(Message message) {
         try {
             for (SubscribedClient subscribedClient : SubscribersList) {
+                System.out.println(message.getCommand());
                 subscribedClient.getClient().sendToClient(message);
             }
         } catch (IOException e1) {
@@ -848,13 +847,9 @@ public class SimpleServer extends AbstractServer {
         List<TableEnt> availableTablesEnt= Convertor.convertToTableEntList(availableTables);
         List<TableEnt> takenTablesEnt= Convertor.convertToTableEntList(takenTables);
 
-        System.out.println("sent Tables number: " + availableTablesEnt.size() + takenTablesEnt.size());
-
-        // print to console
-        if(availableTablesEnt != null && takenTablesEnt != null) System.out.println("Retrieved tables");
-
         // Send response back to client
         Message response = new Message("TablesForMapResponse", new Object[]{availableTablesEnt, takenTablesEnt, branchId});
+        System.out.println("tables for branch id: " + branchId);
         return response;
     }
 

@@ -263,21 +263,22 @@ public class DatabaseServer {
         return menuChanges;
     }
 
-    public static List<Complaint> getAllComplaints(Session session) throws Exception {
+    public static List<Complaint> getAllActiveComplaints(Session session) throws Exception {
         CriteriaBuilder builder = session.getCriteriaBuilder();
         CriteriaQuery<Complaint> query = builder.createQuery(Complaint.class);
         Root<Complaint> root = query.from(Complaint.class);
 
         query.select(root).distinct(true); // Ensure distinct branches
 
-        List<Complaint> complaintsList = session.createQuery(query).getResultList();
+        // Add WHERE clause to filter by status == 0
+        query.select(root).where(builder.equal(root.get("status"), 0)).distinct(true);
 
-        return complaintsList;
+        return session.createQuery(query).getResultList();
     }
 
-    public static List<ComplaintEnt> getComplaints() {
+    public static List<ComplaintEnt> getActiveComplaints() {
         try (Session session = getSessionFactory().openSession()) {
-            List<Complaint> complaintsList = getAllComplaints(session);
+            List<Complaint> complaintsList = getAllActiveComplaints(session);
             return Convertor.convertToComplaintEntList(complaintsList);
         } catch (Exception e) {
             System.err.println("Error fetching complaints: " + e.getMessage());

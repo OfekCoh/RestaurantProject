@@ -208,7 +208,6 @@ public class SimpleClient extends AbstractClient {
                 case "complaints response": {
                     List<ComplaintEnt> complaints = (List<ComplaintEnt>) payload[0];
                     EventBus.getDefault().post(new ComplaintEvent(complaints));
-                    System.out.println("Recieved list of Complaints ");
                     break;
                 }
 
@@ -410,6 +409,7 @@ public class SimpleClient extends AbstractClient {
     }
 
     public void sendGetTablesForMap(int branchId) throws IOException {
+        System.out.println("Client: Get Tables for Map: " + branchId);
         Message message = new Message("get tables for map", new Object[]{branchId});
         sendToServer(message);
     }

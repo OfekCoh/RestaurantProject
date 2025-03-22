@@ -52,7 +52,7 @@ public class HandleComplaintsController {
 
             List<ComplaintEnt> incomingComplaints = event.getComplaints();
 
-            // Remove complaints that are already in the table
+            // Remove complaints that are already in the table by id
             complaints.removeIf(existingComplaint ->
                     incomingComplaints.stream().anyMatch(newComplaint -> newComplaint.getId() == existingComplaint.getId()));
 
@@ -164,7 +164,6 @@ public class HandleComplaintsController {
     // Sends a request to mark the complaint as handled and removes it from the table
     private void handleComplaint(ComplaintEnt complaint) throws Exception {
         SimpleClient.getClient().sendHandleComplaint(complaint.getId(), this.refundAmount);
-        //Platform.runLater(() -> complaints.remove(complaint));
     }
 
     // Processes the refund amount entered by the user
@@ -180,6 +179,7 @@ public class HandleComplaintsController {
     // Navigates back to the previous screen
     @FXML
     void goBack(ActionEvent event) throws IOException {
+        EventBus.getDefault().unregister(this);
         App.setRoot("primary");
     }
 }

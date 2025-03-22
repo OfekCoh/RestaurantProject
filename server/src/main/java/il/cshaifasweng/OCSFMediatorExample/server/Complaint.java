@@ -13,7 +13,7 @@ public class Complaint {
 
     private String complaint;
 
-    @Temporal(TemporalType.DATE)
+    @Temporal(TemporalType.TIMESTAMP)
     private Date date;
 
     @Embedded // BuyersDetails fields will be stored in the complaints table

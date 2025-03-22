@@ -95,20 +95,19 @@ public class BranchSelectionController {
 
     private void onBranchSelected(int branchId) {
         System.out.println("Branch selected: " + branchId);
-        DishSelectionController.setSelectedMode("view");
-//        SelectedBranch=branchId;
         String branchName = branches.stream()
                 .filter(branch -> branch.getId() == branchId)
                 .map(BranchEnt::getBranchName)
                 .findFirst()
                 .orElse("Unknown Branch");
-        DishSelectionController.setSelectedBranchName(branchName);
         try{
             if(next.equals("restaurant map")){
                 RestaurantMapController.setBranchId(branchId);
                 App.setRoot("restaurantMap");
             }
             if(next.equals("dish selection")){
+                DishSelectionController.setSelectedBranchName(branchName);
+                DishSelectionController.setSelectedMode("view");
                 DishSelectionController.setSelectedBranch(branchId);
                 App.setRoot("dishSelection");
             }
