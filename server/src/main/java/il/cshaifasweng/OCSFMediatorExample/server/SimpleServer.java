@@ -7,10 +7,7 @@ import il.cshaifasweng.OCSFMediatorExample.server.ocsf.ConnectionToClient;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -502,6 +499,8 @@ public class SimpleServer extends AbstractServer {
                             if (status != -1) {
                                 Message response = new Message("cancel table order response", new Object[]{status});
                                 client.sendToClient(response);
+                                // update map
+                                //response = getCurrentAvailableTablesInBranch();
                             } else {
                                 Warning failMsg = new Warning("Failed to cancel order!");
                                 client.sendToClient(failMsg);
@@ -591,6 +590,9 @@ public class SimpleServer extends AbstractServer {
                                 System.out.println("Added table order with id: " + orderId);
                                 Message response = new Message("TableOrderResponse", new Object[]{orderId});
                                 client.sendToClient(response);
+                                //update map at client
+                                //response = getCurrentAvailableTablesInBranch();
+                                //sendToAllClients(response);
 
                             } else if(orderId == -1){  // fail to save to database
                                 Warning failMsg = new Warning("Failed to add order! Please try again.");
@@ -860,6 +862,22 @@ public class SimpleServer extends AbstractServer {
 
         scheduler.scheduleAtFixedRate(() -> {
             boolean complaintsUpdated = DatabaseServer.autoHandleOldComplaints();
+
+            // Get current time
+            Calendar calendar = Calendar.getInstance();
+            int minute = calendar.get(Calendar.MINUTE);
+
+            // Only run table availability check if current minute is 0, 15, 30, or 45
+            if (minute % 15 == 0) {
+                try {
+                    for (int i = 0; i < DatabaseServer.getMaxBranchId(); i++) {
+                        Message response = getCurrentAvailableTablesInBranch(i + 1); // each cell i represents i+1 branch
+                        sendToAllClients(response);
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
 
             // Check to update open table maps
             try {
