@@ -9,32 +9,31 @@
 
 <VBox alignment="CENTER" prefHeight="585.0" prefWidth="785.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="il.cshaifasweng.OCSFMediatorExample.client.PrimaryController">
    <children>
-      <Text strokeType="OUTSIDE" strokeWidth="0.0" text="המטבח של אמא">
+      <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Mama's Kitchen">
          <font>
             <Font name="System Bold" size="36.0" />
          </font>
       </Text>
       <HBox alignment="CENTER" prefHeight="66.0" prefWidth="336.0" spacing="20.0">
          <children>
-            <Button fx:id="reportsButton" mnemonicParsing="false" onAction="#makeReport" prefHeight="30.0" prefWidth="95.0" text="הכנת דוחות" />
-            <Button fx:id="complaintHandleButton" mnemonicParsing="false" onAction="#switchToComplaintHandler" prefHeight="30.0" prefWidth="95.0" text="טיפול בתלונה" />
-            <Button fx:id="allocateSpaceButton" mnemonicParsing="false" onAction="#switchToSpaceAllocation" prefHeight="30.0" prefWidth="95.0" text="הקצאת מקום" />
-            <Button fx:id="Branch" mnemonicParsing="false" onAction="#switchToMenuView" prefHeight="30.0" prefWidth="85.0" text="עדכון תפריט" />
-            <Button fx:id="resturantMap" mnemonicParsing="false" onAction="#switchToResturantMap" prefHeight="30.0" prefWidth="95.0" text="מפת מסעדה" />
+            <Button fx:id="reportsButton" mnemonicParsing="false" onAction="#makeReport" prefHeight="30.0" text="Generate Reports" />
+            <Button fx:id="complaintHandleButton" mnemonicParsing="false" onAction="#switchToComplaintHandler" prefHeight="30.0" text="Handle Complaint" />
+            <Button fx:id="Branch" mnemonicParsing="false" onAction="#switchToMenuView" prefHeight="30.0" text="Update Menu" />
+            <Button fx:id="resturantMap" mnemonicParsing="false" onAction="#switchToRestaurantMap" prefHeight="30.0" text="View Map" />
          </children>
       </HBox>
       <VBox alignment="CENTER" prefHeight="280.0" prefWidth="336.0" spacing="20.0">
          <children>
-            <Button fx:id="menuView" mnemonicParsing="false" onAction="#switchToMenu" prefHeight="30.0" prefWidth="150.0" text="צפייה בתפריט" />
-            <Button fx:id="orderDelivery" mnemonicParsing="false" onAction="#switchToMenuDelivery" prefHeight="30.0" prefWidth="150.0" text="הזמנת משלוח" />
-            <Button fx:id="orderTable" mnemonicParsing="false" onAction="#switchToTableOrder" prefHeight="30.0" prefWidth="150.0" text="הזמנת שולחן" />
-            <Button fx:id="cancelButton" mnemonicParsing="false" onAction="#switchToCancelation" prefHeight="30.0" prefWidth="150.0" text="ביטולים" />
-            <Button fx:id="complaint" mnemonicParsing="false" onAction="#switchToComplaint" prefHeight="30.0" prefWidth="150.0" text="הגשת תלונה" />
+            <Button fx:id="menuView" mnemonicParsing="false" onAction="#switchToMenu" prefHeight="30.0" prefWidth="150.0" text="View Menu" />
+            <Button fx:id="orderDelivery" mnemonicParsing="false" onAction="#switchToMenuDelivery" prefHeight="30.0" prefWidth="150.0" text="Order Delivery" />
+            <Button fx:id="orderTable" mnemonicParsing="false" onAction="#switchToTableOrder" prefHeight="30.0" prefWidth="150.0" text="Order Table" />
+            <Button fx:id="cancelButton" mnemonicParsing="false" onAction="#switchToCancelation" prefHeight="30.0" prefWidth="150.0" text="Cancellations" />
+            <Button fx:id="complaint" mnemonicParsing="false" onAction="#switchToComplaint" prefHeight="30.0" prefWidth="150.0" text="Submit Complaint" />
          </children>
       </VBox>
       <VBox alignment="CENTER" prefHeight="48.0" prefWidth="336.0">
          <children>
-            <Button fx:id="login" mnemonicParsing="false" onAction="#switchToLogin" prefHeight="35.0" prefWidth="150.0" text="התחברות עובדים" />
+            <Button fx:id="login" mnemonicParsing="false" onAction="#switchToLogin" prefHeight="35.0" prefWidth="150.0" text="Employee Login" />
          </children>
       </VBox>
    </children>

@@ -210,9 +210,9 @@ public class OrderTableController {
         LocalTime startTime = openTime.plusMinutes(15);
         if (date.equals(LocalDate.now()) && now.isAfter(startTime)) {
             int minute = now.getMinute();
-            int remainder = minute % 30;
+            int remainder = minute % 15;
             if (remainder != 0) {
-                now = now.plusMinutes(30 - remainder);
+                now = now.plusMinutes(15 - remainder);
             }
             if (now.isAfter(startTime)) {
                 startTime = now;
@@ -221,7 +221,7 @@ public class OrderTableController {
 
         // Generate 15-minute time slots from startTime until at least 60 minutes before closing.
         List<String> timeSlots = new ArrayList<>();
-        LocalTime slot = startTime;
+        LocalTime slot = startTime.withSecond(0).withNano(0);
         while (!slot.isAfter(closeTime.minusMinutes(60))) {
             timeSlots.add(slot.format(timeFormatter));
             slot = slot.plusMinutes(15);

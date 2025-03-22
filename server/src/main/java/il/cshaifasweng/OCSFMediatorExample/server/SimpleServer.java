@@ -1,31 +1,34 @@
 package il.cshaifasweng.OCSFMediatorExample.server;
 
+import com.mysql.cj.xdevapi.Client;
 import il.cshaifasweng.OCSFMediatorExample.entities.*;
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.AbstractServer;
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.ConnectionToClient;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.SubscribedClient;
+import org.dom4j.Branch;
+
+import javax.xml.crypto.Data;
 
 public class SimpleServer extends AbstractServer {
     private static ArrayList<SubscribedClient> SubscribersList = new ArrayList<>();
+    private final int schedulerIntervals = 1;// minuets between each checks interval
     private DatabaseServer databaseServer;
-
+    private int maxBranchId;
     public SimpleServer(int port, String databasePassword) {
         super(port);
         DatabaseServer.password = databasePassword;
         // create the database
         databaseServer = new DatabaseServer(databasePassword);
-        startComplaintChecker();
+        maxBranchId = DatabaseServer.getMaxBranchId();
+        startChecksScheduler(); // Start automatic checks
     }
 
     @Override
@@ -485,6 +488,39 @@ public class SimpleServer extends AbstractServer {
                     break;
                 }
 
+                case "cancel table order": {
+                    if (payload.length == 2) {
+                        try {
+                            int orderId = (int) payload[0];
+                            String phoneNumber = (String) payload[1];
+
+                            // cancel the order in the database (update status, we don't want to remove it from the database completely).
+                            int status = DatabaseServer.cancelTableOrder(orderId, phoneNumber);
+
+                            if (status != -1) {
+                                Message response = new Message("cancel table order response", new Object[]{status});
+                                client.sendToClient(response);
+                                // update map
+                                response = getCurrentAvailableTablesInBranch(DatabaseServer.getBranchIdFromTableOrderId(orderId));
+                                sendToAllClients(response);
+                            } else {
+                                Warning failMsg = new Warning("Failed to cancel order!");
+                                client.sendToClient(failMsg);
+                            }
+
+                        } catch (Exception e) {
+                            try {
+                                Warning failMsg = new Warning("Error, Failed to cancel order: " + e.getMessage());
+                                client.sendToClient(failMsg);
+                            } catch (IOException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    break;
+                }
+
                 case "check tables": {
                     if (payload.length == 5) {
                         try {
@@ -497,7 +533,7 @@ public class SimpleServer extends AbstractServer {
                             // print to console
                             System.out.println("Received table check request: Branch=" + branchId + ", Date=" + date + ", Time=" + time + ", Guests=" + numberOfGuests + ", Location=" + location);
 
-                            List<Integer> availableTablesIds = DatabaseServer.checkAvailableTables(branchId, date, time, numberOfGuests, location);
+                            List<Integer> availableTablesIds = DatabaseServer.checkAvailableTables(branchId, date, time, numberOfGuests, location, false);
                             if(availableTablesIds != null) System.out.println("availableTablesIds: " + availableTablesIds);
 
                             // Send response back to client
@@ -556,6 +592,9 @@ public class SimpleServer extends AbstractServer {
                                 System.out.println("Added table order with id: " + orderId);
                                 Message response = new Message("TableOrderResponse", new Object[]{orderId});
                                 client.sendToClient(response);
+                                //update map at client
+                                response = getCurrentAvailableTablesInBranch(branchId);
+                                sendToAllClients(response);
 
                             } else if(orderId == -1){  // fail to save to database
                                 Warning failMsg = new Warning("Failed to add order! Please try again.");
@@ -579,6 +618,20 @@ public class SimpleServer extends AbstractServer {
                     break;
                 }
 
+                case "get tables for map": {
+                    if (payload.length == 1) {
+                        try {
+                            int branchId = (int) payload[0];
+                            System.out.println("Received table check request: Branch=" + branchId + ", Date=" + payload[0]);
+                            Message response = getCurrentAvailableTablesInBranch(branchId);
+                            client.sendToClient(response);
+                        }
+                        catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    break;
+                }
 
                 // -----------------------------------------------------------
                 // login
@@ -660,7 +713,6 @@ public class SimpleServer extends AbstractServer {
                         String cvv = (String) payload[10];
                         String email = (String) payload[11];
 
-                        System.out.println("here");
                         Complaint newComplaint = new Complaint(complaintText, date, branchID, new BuyerDetails(name, address, phone, userId, cardNum, cardMonth, cardYear, cvv), email);
                         try {
                             boolean result = DatabaseServer.addComplaint(newComplaint);
@@ -698,11 +750,10 @@ public class SimpleServer extends AbstractServer {
                     break;
 
                 }
-                // send all the complaints in the db in complaintEnt list
+                // send all the active complaints in the db in complaintEnt list
                 case "get complaints": {
                     try {
-                        List<ComplaintEnt> complaints = DatabaseServer.getComplaints();
-                        System.out.println("Complaints: " + complaints.size());
+                        List<ComplaintEnt> complaints = DatabaseServer.getActiveComplaints();
                         client.sendToClient(new Message("complaints response", new Object[]{complaints}));
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -758,10 +809,11 @@ public class SimpleServer extends AbstractServer {
 
 
 
-    // send message for all the cilents
+    // send message for all the clients
     public void sendToAllClients(Message message) {
         try {
             for (SubscribedClient subscribedClient : SubscribersList) {
+                System.out.println(message.getCommand());
                 subscribedClient.getClient().sendToClient(message);
             }
         } catch (IOException e1) {
@@ -769,17 +821,97 @@ public class SimpleServer extends AbstractServer {
         }
     }
 
+    // prepare a message for restaurant map of branch id (longest function name in the code?)
+    private Message getCurrentAvailableTablesInBranch(int branchId) throws Exception {
+
+        List<TableSchema> availableTables= DatabaseServer.getTablesForMap(branchId); // get available tables in branch
+        List<TableSchema> allTables= DatabaseServer.getAllBranchTables(branchId); // get all tables in branch
+
+        // get taken tables (this might look inefficient but keep in mind we only have like 20 tables in total so It's really nothing)
+        boolean availabe = false;
+        List<TableSchema> takenTables = new ArrayList<>();
+        for (TableSchema table : allTables) {
+            for(TableSchema availableTable : availableTables) {
+                if (availableTable.getTableId() == table.getTableId()) {
+                    availabe = true;
+                    break;
+                }
+            }
+            if(!availabe){
+                takenTables.add(table);
+            }
+            availabe = false;
+        }
+
+        // convert tables to entities
+        List<TableEnt> availableTablesEnt= Convertor.convertToTableEntList(availableTables);
+        List<TableEnt> takenTablesEnt= Convertor.convertToTableEntList(takenTables);
+
+        // Send response back to client
+        Message response = new Message("TablesForMapResponse", new Object[]{availableTablesEnt, takenTablesEnt, branchId});
+        System.out.println("tables for branch id: " + branchId);
+        return response;
+    }
+
     // check complaints periodically to auto handle complaints older than 24 hours
-    private void startComplaintChecker() {
+    private void startChecksScheduler() {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
         scheduler.scheduleAtFixedRate(() -> {
             boolean complaintsUpdated = DatabaseServer.autoHandleOldComplaints();
 
-            // Only notify clients if complaints were updated
-            if (complaintsUpdated) {
-                System.out.println("Auto-handled complaints. Notifying clients..."); // should i notify clients?
+            Calendar calendar = Calendar.getInstance();
+            int minute = calendar.get(Calendar.MINUTE);
+            int hour = calendar.get(Calendar.HOUR_OF_DAY);
+            int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK); // Sunday = 1, Saturday = 7
 
+            // Adjust day index to match openingHours list (0 = Monday, 6 = Sunday)
+            int openingHoursIndex = (dayOfWeek + 5) % 7;
+
+            if (minute % 15 == 0) { // Check every round 15 minuets: 0, 15,30,45 of the hour
+                try {
+
+                    // go over all of the branches
+                    for (int branchId = 1; branchId <= maxBranchId; branchId++) {
+                        List<String> openingHours = DatabaseServer.getBranchOpeningHours(branchId);
+
+                        if (openingHours == null || openingHours.size() <= openingHoursIndex) continue;
+
+                        String hoursToday = openingHours.get(openingHoursIndex);
+                        if (hoursToday == null || hoursToday.equalsIgnoreCase("Closed")) continue;
+
+                        // Parse opening and closing times
+                        String[] parts = hoursToday.split("-");
+                        if (parts.length != 2) continue;
+
+                        int openHour = Integer.parseInt(parts[0].split(":")[0]);
+                        int openMinute = Integer.parseInt(parts[0].split(":")[1]);
+                        int closeHour = Integer.parseInt(parts[1].split(":")[0]);
+                        int closeMinute = Integer.parseInt(parts[1].split(":")[1]);
+
+                        Calendar openTime = (Calendar) calendar.clone();
+                        openTime.set(Calendar.HOUR_OF_DAY, openHour);
+                        openTime.set(Calendar.MINUTE, openMinute);
+
+                        Calendar closeTime = (Calendar) calendar.clone();
+                        closeTime.set(Calendar.HOUR_OF_DAY, closeHour);
+                        closeTime.set(Calendar.MINUTE, closeMinute);
+
+                        // Run check only if current time is within opening hours
+                        if (calendar.after(openTime) && calendar.before(closeTime)) {
+                            Message response = getCurrentAvailableTablesInBranch(branchId);
+                            sendToAllClients(response);
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-        }, 0,  1, TimeUnit.MINUTES);
+
+            if (complaintsUpdated) {
+                System.out.println("Auto-handled complaints. Notifying clients...");
+            }
+        }, 0, schedulerIntervals, TimeUnit.MINUTES);
     }
+
 }

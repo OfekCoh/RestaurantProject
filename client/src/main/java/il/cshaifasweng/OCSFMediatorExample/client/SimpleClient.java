@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-
 public class SimpleClient extends AbstractClient {
 
     public static SimpleClient client = null;
@@ -151,6 +150,30 @@ public class SimpleClient extends AbstractClient {
                     break;
                 }
 
+                case "cancel table order response": {
+                    Platform.runLater(() -> {
+                        try {
+                            int status= (int) payload[0];
+                            if(status==1){  // free cancellation success
+                                Alert alert = new Alert(Alert.AlertType.INFORMATION, ("order was canceled successfully, and no charges were made."));
+                                alert.show();
+                            }
+                            else if(status==2){ // paid cancellation success
+                                Alert alert = new Alert(Alert.AlertType.INFORMATION, ("Order canceled successfully.\nA ₪10 charge applies due to last-hour cancellation."));
+                                alert.show();
+                            }
+                            else { // -1 error
+                                Alert alert = new Alert(Alert.AlertType.ERROR, ("Something went wrong! Please try again."));
+                                alert.show();
+                            }
+                            App.setRoot("primary");
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    break;
+                }
+
                 case "TableOrderResponse": {
                     System.out.println("Order success! order id is: " + payload[0]);
                     Platform.runLater(() -> {
@@ -172,10 +195,19 @@ public class SimpleClient extends AbstractClient {
                     break;
                 }
 
+                case "TablesForMapResponse": {
+                    // this return tables available and tables taken at the current time
+                    List<TableEnt> availableTables= (List<TableEnt>) payload[0];
+                    List<TableEnt> takenTables= (List<TableEnt>) payload[1];
+                    int branchId = (int) payload[2];
+                    System.out.println("Received Tables For Map Response");
+                    EventBus.getDefault().post(new RestaurantMapEvent(takenTables, availableTables, branchId));
+
+                }
+
                 case "complaints response": {
                     List<ComplaintEnt> complaints = (List<ComplaintEnt>) payload[0];
                     EventBus.getDefault().post(new ComplaintEvent(complaints));
-                    System.out.println("Recieved list of Complaints ");
                     break;
                 }
 
@@ -185,6 +217,7 @@ public class SimpleClient extends AbstractClient {
                     System.out.println("received branch report ");
                     break;
                 }
+
                 case "availableTables response": {
                     List<Integer> availableTablesIds = (List<Integer>) payload[0];
 
@@ -196,13 +229,7 @@ public class SimpleClient extends AbstractClient {
                         break;
                     }
 
-                    // TODO offer other options or branch
                     else if(availableTablesIds.isEmpty()) {  // no seats at this time
-
-                        //
-                        //   add your code here
-                        //
-
                         Platform.runLater(() -> {
                             Alert alert = new Alert(Alert.AlertType.INFORMATION, "Please try a different time or branch.");
                             alert.setHeaderText("There are no free tables!");
@@ -256,16 +283,13 @@ public class SimpleClient extends AbstractClient {
                     });
                     break;
                 }
-                // If you want server to respond with a "menuResponse" message, do it here
-                // case "menuResponse": { ... } break;
 
                 default:
                     System.out.println("Client: Unknown command from server: " + command);
                     break;
-
-
             }
         }
+
         // 2) Otherwise, check if it's a known entity like MenuEnt, Warning, etc.
 //        else if (msg instanceof MenuEnt) {
 //            MenuEnt menu = (MenuEnt) msg;
@@ -355,7 +379,11 @@ public class SimpleClient extends AbstractClient {
     public void sendCancelOrder(int orderId, String phoneNum) throws IOException {
         Message message = new Message("cancel order", new Object[]{orderId,phoneNum});
         sendToServer(message);
+    }
 
+    public void sendCancelTableOrder(int orderId, String phoneNum) throws IOException {
+        Message message = new Message("cancel table order", new Object[]{orderId,phoneNum});
+        sendToServer(message);
     }
 
     public void sendCheckTables() throws IOException {
@@ -380,6 +408,12 @@ public class SimpleClient extends AbstractClient {
         sendToServer(message);
     }
 
+    public void sendGetTablesForMap(int branchId) throws IOException {
+        System.out.println("Client: Get Tables for Map: " + branchId);
+        Message message = new Message("get tables for map", new Object[]{branchId});
+        sendToServer(message);
+    }
+
     public void sendLoginCommand(String email, String password) throws Exception {
         Message message = new Message("login", new Object[]{email, password});
         sendToServer(message);
@@ -390,16 +424,9 @@ public class SimpleClient extends AbstractClient {
         sendToServer(message);
     }
 
-    // need to add buyer details?
     public void sendComplaint(String complaintText, Date date, int branchId, String name, String address, String phone, String userID, String cardNumber, Integer month,Integer  year, String cvv, String email) throws IOException {
         Message message = new Message("complaint", new Object[]{complaintText, date, branchId, name, address, phone, userID, cardNumber, month, year, cvv, email});
         sendToServer(message);
-    }
-    public static SimpleClient getClient() {
-        if (client == null) {
-            client = new SimpleClient(ip, port);
-        }
-        return client;
     }
 
     public void sendGetComplaints() throws Exception {
@@ -416,5 +443,11 @@ public class SimpleClient extends AbstractClient {
         sendToServer(message);
     }
 
+    public static SimpleClient getClient() {
+        if (client == null) {
+            client = new SimpleClient(ip, port);
+        }
+        return client;
+    }
 
 }

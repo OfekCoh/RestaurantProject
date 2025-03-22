@@ -78,11 +78,13 @@ public class CancelOrderController {
         // 3) Send the "cancel order" request to the server
         try {
             if (orderType.equalsIgnoreCase("order")) {
-                //Regular Table
+                //Regular Order
                 SimpleClient.getClient().sendCancelOrder(orderId, phoneNumber);
                 System.out.println("Sending 'cancel order' request: orderId=" + orderId + ", phone=" + phoneNumber);
             } else if (orderType.equalsIgnoreCase("table")) {
                 //Table Order
+                SimpleClient.getClient().sendCancelTableOrder(orderId, phoneNumber);
+                System.out.println("Sending 'cancel table order' request: orderId=" + orderId + ", phone=" + phoneNumber);
             }
         } catch (Exception e) {
             e.printStackTrace();

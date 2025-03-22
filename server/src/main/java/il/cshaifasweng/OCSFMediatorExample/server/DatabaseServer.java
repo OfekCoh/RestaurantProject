@@ -6,11 +6,13 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.service.ServiceRegistry;
 
+import javax.persistence.Column;
 import javax.persistence.criteria.*;
 import java.io.InputStream;
 import java.util.*;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
+
 
 import static il.cshaifasweng.OCSFMediatorExample.server.Convertor.*;
 
@@ -261,21 +263,22 @@ public class DatabaseServer {
         return menuChanges;
     }
 
-    public static List<Complaint> getAllComplaints(Session session) throws Exception {
+    public static List<Complaint> getAllActiveComplaints(Session session) throws Exception {
         CriteriaBuilder builder = session.getCriteriaBuilder();
         CriteriaQuery<Complaint> query = builder.createQuery(Complaint.class);
         Root<Complaint> root = query.from(Complaint.class);
 
         query.select(root).distinct(true); // Ensure distinct branches
 
-        List<Complaint> complaintsList = session.createQuery(query).getResultList();
+        // Add WHERE clause to filter by status == 0
+        query.select(root).where(builder.equal(root.get("status"), 0)).distinct(true);
 
-        return complaintsList;
+        return session.createQuery(query).getResultList();
     }
 
-    public static List<ComplaintEnt> getComplaints() {
+    public static List<ComplaintEnt> getActiveComplaints() {
         try (Session session = getSessionFactory().openSession()) {
-            List<Complaint> complaintsList = getAllComplaints(session);
+            List<Complaint> complaintsList = getAllActiveComplaints(session);
             return Convertor.convertToComplaintEntList(complaintsList);
         } catch (Exception e) {
             System.err.println("Error fetching complaints: " + e.getMessage());
@@ -284,13 +287,13 @@ public class DatabaseServer {
         }
     }
 
-    public static List<TableSchema> getAllTables() throws Exception {
+    public static List<TableSchema> getAllBranchTables(int branchId) throws Exception {
         try (Session session = getSessionFactory().openSession()) {
             CriteriaBuilder builder = session.getCriteriaBuilder();
             CriteriaQuery<TableSchema> query = builder.createQuery(TableSchema.class);
             Root<TableSchema> root = query.from(TableSchema.class);
 
-            query.select(root).distinct(true); // Ensure distinct branches
+            query.select(root).distinct(true).where(builder.equal(root.get("branch").get("id"), branchId));
             return session.createQuery(query).getResultList();
 
         } catch (Exception e) {
@@ -402,7 +405,7 @@ public class DatabaseServer {
         if (whoSubmitted == WhoSubmittedBy.HOSTESS) return addOrder(newOrder);
 
         // will check if there are still available tables (and other client didn't submit them)
-        List<Integer> availableTablesIds= checkAvailableTables(newOrder.getBranchId(), newOrder.getDate(), newOrder.getTime(), newOrder.getNumberOfGuests(), newOrder.getLocation());
+        List<Integer> availableTablesIds= checkAvailableTables(newOrder.getBranchId(), newOrder.getDate(), newOrder.getTime(), newOrder.getNumberOfGuests(), newOrder.getLocation(), false);
         List<TableSchema> tables= getTablesWithIds(availableTablesIds);
         System.out.println("new availableTablesIds: " + availableTablesIds); // just to check in case the tables have been changed
 
@@ -413,6 +416,49 @@ public class DatabaseServer {
         return addOrder(newOrder);
     }
 
+    public static int cancelTableOrder(int orderId, String phoneNumber) {
+        int newStatus= -1; // -1 fail, 1 free, 2 paid
+
+        try (Session session = getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            // fetch order
+            TableOrder order = session.get(TableOrder.class, orderId);
+            if (order == null || order.getStatus() != 0) return -1; // if fetching order failed
+
+            // fetch buyer phone number
+            BuyerDetails details = order.getBuyerDetails(); // get phone number
+            if (details == null || !details.getPhone().equals(phoneNumber)) return -1; //Check we got the same phone number
+
+            // get order time
+            LocalDate orderLocalDate = LocalDate.parse(order.getDate());  // "2025-03-12"
+            LocalTime orderLocalTime = LocalTime.parse(order.getTime());  // "hh:mm"
+            LocalDateTime orderDateTime = LocalDateTime.of(orderLocalDate, orderLocalTime); // combine them both
+
+            // get time now and calculate if within the last hour
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime oneHourBefore = orderDateTime.minusHours(1);
+
+            if(now.isAfter(orderDateTime)) return -1; // cant cancel order that started
+
+            // check if now is within the last hour (oneHourBefore < now < orderStartTim)
+            if(now.isAfter(oneHourBefore) && now.isBefore(orderDateTime)) newStatus=2;  // needs to pay a fee
+            else newStatus=1; // free cancel
+
+            // Update order status
+            order.setStatus(newStatus);
+            order.setTables(Collections.emptyList()); // free the tables
+            session.update(order);
+            transaction.commit();
+
+            return newStatus;
+
+        } catch (Exception e) {
+            System.err.println("Failed to cancel order: " + e.getMessage());
+            e.printStackTrace();
+            return -1;
+        }
+    }
 
     public static Object[] cancelOrder(int orderId, String phoneNumber) {
         int newStatus = -1;
@@ -477,7 +523,32 @@ public class DatabaseServer {
         }
     }
 
-    public static List<Integer> checkAvailableTables(int branchId, String date, String time, int numberOfDiners, String location) {
+    public static List<TableSchema> getTablesForMap(int branchId) throws Exception{
+        // get current date
+        String todayDate = LocalDate.now().toString();
+
+        // get current time rounded up to nearest 15 minutes
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        LocalTime currentTime = LocalTime.now();
+        int minutes = currentTime.getMinute();
+        int extraMinutes = 15 - (minutes % 15);
+        LocalTime roundedUp= currentTime.plusMinutes(extraMinutes == 15 ? 0 : extraMinutes).withSecond(0).withNano(0);
+        String time = roundedUp.format(timeFormatter);
+
+        // get available tables for current time and branch
+        List<Integer> indoorTables= checkAvailableTables(branchId, todayDate, time, 0, "INDOOR", true);
+        List<Integer> outdoorTables= checkAvailableTables(branchId, todayDate, time, 0, "OUTDOOR", true);
+
+        // merge both lists
+        List<Integer> availableTables = new ArrayList<>(indoorTables);
+        availableTables.addAll(outdoorTables);
+
+
+        // return the tables according to ids
+        return getTablesWithIds(availableTables);
+    }
+
+    public static List<Integer> checkAvailableTables(int branchId, String date, String time, int numberOfDiners, String location, boolean forMap) {
         List<Integer> availableTables = new ArrayList<>();
         List<Integer> numberOfDinersList = new ArrayList<>();  // the indexes will match between the table id and its size
 
@@ -518,6 +589,8 @@ public class DatabaseServer {
 
             // Execute the query and store the result in availableTables
             availableTables = query.getResultList();
+
+            if(forMap) return availableTables; // this returns all the free tables (and not just the ones for the order)
 
             // For every table in the list add its size to numberOfDinersList
             for (Integer tableId : availableTables) {
@@ -898,7 +971,7 @@ public class DatabaseServer {
             List<Complaint> oldComplaints = session.createQuery(selectQuery).getResultList();
 
             if (oldComplaints.isEmpty()) {
-                System.out.println("No complaints found that require automatic handling.");
+//                System.out.println("No complaints found that require automatic handling.");
                 transaction.commit();
                 return false; // No complaints were updated
             }
@@ -1176,6 +1249,58 @@ public class DatabaseServer {
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println("Error inserting test data: " + e.getMessage());
+        }
+    }
+
+    // Fetch the maximum branch ID from the database, to find number of branches
+    public static Integer getMaxBranchId() {
+        Integer maxId = null;
+        try (Session session = getSessionFactory().openSession()) {
+            // Create the query to get the max branch ID
+            Query<Integer> query = session.createQuery("SELECT MAX(r.id) FROM RestaurantBranch r", Integer.class);
+            maxId = query.uniqueResult();
+        } catch (Exception e) {
+            System.err.println("Error fetching max branch ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+        if (maxId == null){
+            return  0;
+        }  // Return 0 if no branches exist
+        return maxId;
+    }
+
+    // Get the branch id from the order's id
+    public static int getBranchIdFromTableOrderId(int tableOrderId) {
+        try (Session session = getSessionFactory().openSession()) {
+            TableOrder tableOrder = session.get(TableOrder.class, tableOrderId);
+            if (tableOrder != null) {
+                return tableOrder.getBranchId();
+            } else {
+                System.err.println("No TableOrder found with ID: " + tableOrderId);
+                return -1; // or throw exception depending on your design
+            }
+        } catch (Exception e) {
+            System.err.println("Error retrieving TableOrder: " + e.getMessage());
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
+    // Recieve branch opening hours from branch id
+    public static List<String> getBranchOpeningHours(int branchId) {
+        try (Session session = getSessionFactory().openSession()) {
+            RestaurantBranch branch = session.get(RestaurantBranch.class, branchId);
+            if (branch != null) {
+                Hibernate.initialize(branch.getOpeningHours()); // Ensure it's loaded before session closes
+                return branch.getOpeningHours();
+            } else {
+                System.err.println("Branch not found for ID: " + branchId);
+                return Collections.emptyList();
+            }
+        } catch (Exception e) {
+            System.err.println("Error retrieving opening hours: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
         }
     }
 

@@ -14,7 +14,7 @@
    <children>
       <VBox alignment="CENTER" prefHeight="400.0" prefWidth="600.0">
          <children>
-            <Text text="התחברות עובדים">
+            <Text text="Employee Login">
                <font>
                   <Font name="System Bold" size="36.0" />
                </font>

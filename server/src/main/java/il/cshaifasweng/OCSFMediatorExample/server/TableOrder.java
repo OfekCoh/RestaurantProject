@@ -51,8 +51,8 @@ public class TableOrder {
     public TableOrder(int branchId, List<TableSchema> tables, String date, String time, int numberOfGuests, String location, int status, boolean buyerDetailsNeeded, BuyerDetails buyerDetails) {
         this.branchId = branchId;
         this.tables = tables;
-        this.date = date;
-        this.time = time;
+        this.date = date;  // "2025-03-12" format
+        this.time = time;  // hh:mm format
         this.numberOfGuests = numberOfGuests;
         this.location = location;
         this.status = status;

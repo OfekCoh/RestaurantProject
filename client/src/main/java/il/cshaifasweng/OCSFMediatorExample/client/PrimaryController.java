@@ -16,9 +16,6 @@ public class PrimaryController {
     private Button Branch;
 
     @FXML
-    private Button allocateSpaceButton;
-
-    @FXML
     private Button cancelButton;
 
     @FXML
@@ -75,6 +72,7 @@ public class PrimaryController {
     @FXML
     void switchToMenu(ActionEvent event) throws Exception {
         SimpleClient.getClient().sendGetMenuCommand();
+        BranchSelectionController.setNextWindow("dish selection");
         App.setRoot("branchSelection");
     }
 
@@ -102,19 +100,15 @@ public class PrimaryController {
     }
 
     @FXML
-    void switchToResturantMap(ActionEvent event) throws Exception {
-        SimpleClient.getClient().sendGetMenuCommand();
+    void switchToRestaurantMap(ActionEvent event) throws Exception {
+        //SimpleClient.getClient().sendGetMenuCommand();
+        BranchSelectionController.setNextWindow("restaurant map");
         App.setRoot("branchSelection");
     }
 
     @FXML
     void switchToTableOrder(ActionEvent event) throws Exception {
         App.setRoot("orderTable");
-    }
-
-    @FXML
-    void switchToSpaceAllocation(ActionEvent event) {
-
     }
 
     @Subscribe
@@ -131,7 +125,6 @@ public class PrimaryController {
 
         if (resturantMap != null) resturantMap.setVisible(SimpleClient.userID != -1);
         if (Branch != null) Branch.setVisible(SimpleClient.ruleID >= 3 && SimpleClient.ruleID <= 4);
-        if (allocateSpaceButton != null) allocateSpaceButton.setVisible(SimpleClient.userID != -1);
         if (complaintHandleButton != null)
             complaintHandleButton.setVisible(SimpleClient.ruleID == 1 || SimpleClient.ruleID == 4);
         if (reportsButton != null) reportsButton.setVisible(SimpleClient.ruleID >= 2);
