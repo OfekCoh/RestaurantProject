@@ -16,9 +16,6 @@ public class PrimaryController {
     private Button Branch;
 
     @FXML
-    private Button allocateSpaceButton;
-
-    @FXML
     private Button cancelButton;
 
     @FXML
@@ -114,11 +111,6 @@ public class PrimaryController {
         App.setRoot("orderTable");
     }
 
-    @FXML
-    void switchToSpaceAllocation(ActionEvent event) {
-
-    }
-
     @Subscribe
     public void onLoginSuccess(LoginEvent event) {
         Platform.runLater(() -> {
@@ -133,7 +125,6 @@ public class PrimaryController {
 
         if (resturantMap != null) resturantMap.setVisible(SimpleClient.userID != -1);
         if (Branch != null) Branch.setVisible(SimpleClient.ruleID >= 3 && SimpleClient.ruleID <= 4);
-        if (allocateSpaceButton != null) allocateSpaceButton.setVisible(SimpleClient.userID != -1);
         if (complaintHandleButton != null)
             complaintHandleButton.setVisible(SimpleClient.ruleID == 1 || SimpleClient.ruleID == 4);
         if (reportsButton != null) reportsButton.setVisible(SimpleClient.ruleID >= 2);

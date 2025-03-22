@@ -230,13 +230,7 @@ public class SimpleClient extends AbstractClient {
                         break;
                     }
 
-                    // TODO offer other options or branch
                     else if(availableTablesIds.isEmpty()) {  // no seats at this time
-
-                        //
-                        //   add your code here
-                        //
-
                         Platform.runLater(() -> {
                             Alert alert = new Alert(Alert.AlertType.INFORMATION, "Please try a different time or branch.");
                             alert.setHeaderText("There are no free tables!");

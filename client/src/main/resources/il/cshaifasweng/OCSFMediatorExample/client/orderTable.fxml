@@ -11,7 +11,7 @@
 
 <VBox prefHeight="388.0" prefWidth="453.0" spacing="10.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="il.cshaifasweng.OCSFMediatorExample.client.OrderTableController">
     <children>
-        <Label prefHeight="22.0" prefWidth="278.0" text="Orde Table:">
+        <Label prefHeight="22.0" prefWidth="278.0" text="Order Table:">
             <font>
                 <Font name="System Bold" size="15.0" />
             </font>
