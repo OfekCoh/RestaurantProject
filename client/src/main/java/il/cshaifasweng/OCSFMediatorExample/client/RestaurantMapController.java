@@ -60,7 +60,6 @@ public class RestaurantMapController {
     public void initialize() {
         // register to event bus to receive complaints
         EventBus.getDefault().register(this);
-        System.out.println("here0");
         tablesArray = null;
         availabilityArray = null;
         try {
@@ -76,9 +75,7 @@ public class RestaurantMapController {
             // If this is the first update, initialize the arrays and fill the grid
             if (tablesArray == null) {
                 initializeTableArrays(newFreeTables, newTakenTables);
-                System.out.println("here1");
                 fillGrid();
-                System.out.println("here2");
                 return;
             }
 
@@ -103,8 +100,6 @@ public class RestaurantMapController {
 
     // This function is called only once when the first update arrives to initilize the arrays
     private void initializeTableArrays(List<TableEnt> freeTables, List<TableEnt> takenTables) {
-        System.out.println("Initializing table arrays");
-
         // number of tables in the branch
         int num_of_tables = freeTables.size() + takenTables.size();
 
@@ -117,10 +112,8 @@ public class RestaurantMapController {
         if(!takenTables.isEmpty()){
             first_taken_table_id = takenTables.getFirst().getTableId();
         }
-        System.out.println(takenTables.size());
-
+        // to prevent out of bounds if ids not starting from 0
         minTableId = Math.min(first_available_table_id, first_taken_table_id);
-        System.out.println("Number of tables: " + num_of_tables +"minimum id: " + minTableId);
 
         // create arrays
         tablesArray = new TableEnt[num_of_tables];

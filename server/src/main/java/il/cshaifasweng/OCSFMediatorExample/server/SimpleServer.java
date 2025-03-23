@@ -725,16 +725,12 @@ public class SimpleServer extends AbstractServer {
                                 List<ComplaintEnt> complaintsList = new ArrayList<>(); // Initialize the list
                                 ComplaintEnt newComplaintENT = Convertor.convertToComplaintEnt(newComplaint); // Create a new complaint
                                 complaintsList.add(newComplaintENT); // Add the complaint to the list
-                                sendToAllClients(new Message("complaints response", new Object[]{complaintsList}));
-
+                                Message response = new Message("complaints response", new Object[]{complaintsList});
+                                sendToAllClients(response);
                             } else {
                                 Warning failMsg = new Warning("Failed to add Complaint!");
                                 client.sendToClient(failMsg);
                             }
-
-                        } catch (IOException e) {
-                            System.err.println("IOException: " + e.getMessage());
-                            e.printStackTrace();
                         } catch (Exception e) {
                             System.err.println("Exception: " + e.getMessage());
                             e.printStackTrace();

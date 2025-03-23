@@ -3,6 +3,7 @@ package il.cshaifasweng.OCSFMediatorExample.client;
 import il.cshaifasweng.OCSFMediatorExample.client.Events.LoginEvent;
 import il.cshaifasweng.OCSFMediatorExample.client.Events.LogoutEvent;
 import il.cshaifasweng.OCSFMediatorExample.client.Events.WarningEvent;
+import il.cshaifasweng.OCSFMediatorExample.entities.Message;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -16,6 +17,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -105,16 +107,19 @@ public class App extends Application {
     @Override
 	public void stop() throws Exception {
 		// TODO Auto-generated method stub
-    	EventBus.getDefault().unregister(this);
-        if (client != null) {
-            client.sendToServer("remove client");
-            client.closeConnection();
+        EventBus.getDefault().unregister(this);
+
+        if (SimpleClient.getClient() != null) {
+            Message removeClientMessage = new Message("remove client", new Object[]{});
+            SimpleClient.getClient().sendToServer(removeClientMessage);
+            SimpleClient.getClient().closeConnection();
         }
+
         //Logout in case user is logged in (when we close the app).
         if(SimpleClient.userID!=-1){
             SimpleClient.getClient().sendLogoutCommand(SimpleClient.userID);
         }
-		super.stop();
+        super.stop();
         Platform.exit(); // Forcefully exit JavaFX platform
         System.exit(0);  // Ensure the JVM shuts down
 	}
