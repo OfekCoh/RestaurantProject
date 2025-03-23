@@ -419,8 +419,8 @@ public class SimpleClient extends AbstractClient {
         sendToServer(message);
     }
 
-    public void sendLogoutCommand(int userId) throws Exception {
-        Message message = new Message("logout", new Object[]{userId});
+    public void sendLogoutCommand(int userId,boolean returnStatus) throws Exception {
+        Message message = new Message("logout", new Object[]{userId,returnStatus});
         sendToServer(message);
     }
 

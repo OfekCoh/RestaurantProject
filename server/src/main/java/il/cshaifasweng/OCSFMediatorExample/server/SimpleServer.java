@@ -22,6 +22,7 @@ public class SimpleServer extends AbstractServer {
     private final int schedulerIntervals = 1;// minuets between each checks interval
     private DatabaseServer databaseServer;
     private int maxBranchId;
+
     public SimpleServer(int port, String databasePassword) {
         super(port);
         DatabaseServer.password = databasePassword;
@@ -298,7 +299,7 @@ public class SimpleServer extends AbstractServer {
                         boolean isSalePrice = (boolean) payload[7];
                         double salePrice = (double) payload[8];
 
-                        Dish newDish = new Dish(price, name, description, branchID, ingredients,toppings, image, salePrice, isSalePrice);
+                        Dish newDish = new Dish(price, name, description, branchID, ingredients, toppings, image, salePrice, isSalePrice);
 
                         try {
                             Boolean result = DatabaseServer.addDish(newDish);
@@ -352,7 +353,7 @@ public class SimpleServer extends AbstractServer {
                         boolean isSalePrice = (boolean) payload[8];
                         double salePrice = (double) payload[9];
 
-                        Dish dishToUpdate = new Dish(price, name, desc, branchID, ingr,toppings, image, salePrice, isSalePrice);
+                        Dish dishToUpdate = new Dish(price, name, desc, branchID, ingr, toppings, image, salePrice, isSalePrice);
                         dishToUpdate.setId(dishId);
 
                         // Wrap the updateDish call in a broad try/catch
@@ -468,7 +469,7 @@ public class SimpleServer extends AbstractServer {
 //                                Warning successMsg = new Warning("Order canceled successfully!");
 //                                client.sendToClient(successMsg);
 
-                                Message response = new Message("orderResponse", new Object[]{"cancel", results[0],results[1]});
+                                Message response = new Message("orderResponse", new Object[]{"cancel", results[0], results[1]});
                                 client.sendToClient(response);
                             } else {
                                 Warning failMsg = new Warning("Failed to cancel order!");
@@ -534,22 +535,22 @@ public class SimpleServer extends AbstractServer {
                             System.out.println("Received table check request: Branch=" + branchId + ", Date=" + date + ", Time=" + time + ", Guests=" + numberOfGuests + ", Location=" + location);
 
                             List<Integer> availableTablesIds = DatabaseServer.checkAvailableTables(branchId, date, time, numberOfGuests, location, false);
-                            if(availableTablesIds != null) System.out.println("availableTablesIds: " + availableTablesIds);
+                            if (availableTablesIds != null)
+                                System.out.println("availableTablesIds: " + availableTablesIds);
 
                             // Send response back to client
                             Message response = new Message("availableTables response", new Object[]{availableTablesIds});
                             client.sendToClient(response);
-                        }
-                        catch (Exception e) {
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
                     break;
                 }
 
-                case "add table order":{
+                case "add table order": {
                     if (payload.length == 14) {
-                        try{
+                        try {
                             List<Integer> availableTablesIds = (List<Integer>) payload[0];
                             int branchId = (int) payload[1];
                             String date = (String) payload[2];
@@ -577,7 +578,7 @@ public class SimpleServer extends AbstractServer {
                             }
 
                             // get the tables by their ids
-                            List<TableSchema> tables= DatabaseServer.getTablesWithIds(availableTablesIds);
+                            List<TableSchema> tables = DatabaseServer.getTablesWithIds(availableTablesIds);
 
                             // if there was an error retrieving the tables
                             if (tables == null || tables.isEmpty()) {
@@ -585,7 +586,7 @@ public class SimpleServer extends AbstractServer {
                                 throw new Exception("Pleas try again.");
                             }
 
-                            TableOrder tableOrder= new TableOrder(branchId, tables, date, time, numberOfGuests, location, 0, buyerDetailsNeeded, buyerDetails);
+                            TableOrder tableOrder = new TableOrder(branchId, tables, date, time, numberOfGuests, location, 0, buyerDetailsNeeded, buyerDetails);
                             int orderId = DatabaseServer.addTableOrder(tableOrder); // return the id of the new order. -1 if failed, -2 if the tables were taken by other client
 
                             if (orderId != -1 && orderId != -2) { // success
@@ -596,11 +597,10 @@ public class SimpleServer extends AbstractServer {
                                 response = getCurrentAvailableTablesInBranch(branchId);
                                 sendToAllClients(response);
 
-                            } else if(orderId == -1){  // fail to save to database
+                            } else if (orderId == -1) {  // fail to save to database
                                 Warning failMsg = new Warning("Failed to add order! Please try again.");
                                 client.sendToClient(failMsg);
-                            }
-                            else {  // orderId=-2  there's no more room
+                            } else {  // orderId=-2  there's no more room
                                 Message response = new Message("Tables were stolen", new Object[]{});
                                 client.sendToClient(response);
                             }
@@ -625,8 +625,7 @@ public class SimpleServer extends AbstractServer {
 
                             Message response = getCurrentAvailableTablesInBranch(branchId);
                             client.sendToClient(response);
-                        }
-                        catch (Exception e) {
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
@@ -672,20 +671,22 @@ public class SimpleServer extends AbstractServer {
                 // Expecting payload: [int workerId]
                 // -----------------------------------------------------------
                 case "logout": {
-                    if (payload.length == 1) {
+                    if (payload.length == 2) {
                         int userId = (int) payload[0];
+                        boolean updateStatus = (boolean) payload[1];
                         try {
                             Object[] logoutResult = DatabaseServer.userLogout(userId);
                             boolean logoutSuccess = (boolean) logoutResult[0];
-
-                            if (logoutSuccess) {
-                                System.out.println("Successful logout for Worker ID: " + userId);
-                                Message response = new Message("logoutResponse", new Object[]{true, userId});
-                                client.sendToClient(response);
-                            } else {
-                                System.out.println("Logout failed (either not found or already logged out).");
-                                Message response = new Message("logoutResponse", new Object[]{false, -1});
-                                client.sendToClient(response);
+                            if (updateStatus) { //Update Status - in case we close the app window, auto logout.
+                                if (logoutSuccess) {
+                                    System.out.println("Successful logout for Worker ID: " + userId);
+                                    Message response = new Message("logoutResponse", new Object[]{true, userId});
+                                    client.sendToClient(response);
+                                } else {
+                                    System.out.println("Logout failed (either not found or already logged out).");
+                                    Message response = new Message("logoutResponse", new Object[]{false, -1});
+                                    client.sendToClient(response);
+                                }
                             }
                         } catch (Exception e) {
                             throw new RuntimeException(e);
@@ -777,7 +778,7 @@ public class SimpleServer extends AbstractServer {
                     }
                 }
 
-                case "get branch report":{
+                case "get branch report": {
                     if (payload.length == 3) {
                         int year = (int) payload[0];
                         int month = (int) payload[1];
@@ -810,7 +811,6 @@ public class SimpleServer extends AbstractServer {
     }
 
 
-
     // send message for all the clients
     public void sendToAllClients(Message message) {
         try {
@@ -825,33 +825,33 @@ public class SimpleServer extends AbstractServer {
     // prepare a message for restaurant map of branch id (longest function name in the code?)
     private Message getCurrentAvailableTablesInBranch(int branchId) throws Exception {
 
-        List<TableSchema> availableTables= DatabaseServer.getTablesForMap(branchId); // get available tables in branch
-        List<TableSchema> allTables= DatabaseServer.getAllBranchTables(branchId); // get all tables in branch
+        List<TableSchema> availableTables = DatabaseServer.getTablesForMap(branchId); // get available tables in branch
+        List<TableSchema> allTables = DatabaseServer.getAllBranchTables(branchId); // get all tables in branch
 
         // get taken tables (this might look inefficient but keep in mind we only have like 20 tables in total so It's really nothing)
         boolean availabe = false;
         List<TableSchema> takenTables = new ArrayList<>();
         for (TableSchema table : allTables) {
-            for(TableSchema availableTable : availableTables) {
+            for (TableSchema availableTable : availableTables) {
                 if (availableTable.getTableId() == table.getTableId()) {
                     availabe = true;
                     break;
                 }
             }
-            if(!availabe){
+            if (!availabe) {
                 takenTables.add(table);
             }
             availabe = false;
         }
 
         // convert tables to entities
-        List<TableEnt> availableTablesEnt= Convertor.convertToTableEntList(availableTables);
-        List<TableEnt> takenTablesEnt= Convertor.convertToTableEntList(takenTables);
+        List<TableEnt> availableTablesEnt = Convertor.convertToTableEntList(availableTables);
+        List<TableEnt> takenTablesEnt = Convertor.convertToTableEntList(takenTables);
 
         System.out.println("sent Tables number: " + availableTablesEnt.size() + takenTablesEnt.size());
 
         // print to console
-        if(availableTablesEnt != null && takenTablesEnt != null) System.out.println("Retrieved tables");
+        if (availableTablesEnt != null && takenTablesEnt != null) System.out.println("Retrieved tables");
 
         // Send response back to client
         Message response = new Message("TablesForMapResponse", new Object[]{availableTablesEnt, takenTablesEnt, branchId});

@@ -72,12 +72,14 @@ public class App extends Application {
 
     private void handleDisconnect() {
         try {
-            SimpleClient.getClient().sendLogoutCommand(SimpleClient.userID);
-            SimpleClient.userID = -1;
-            SimpleClient.ruleID = -1;
-            globalToolBar.setVisible(false);
-            setRoot("primary");
-            EventBus.getDefault().post(new LogoutEvent());
+            if(SimpleClient.userID!=-1) {
+                SimpleClient.getClient().sendLogoutCommand(SimpleClient.userID,true);
+                SimpleClient.userID = -1;
+                SimpleClient.ruleID = -1;
+                globalToolBar.setVisible(false);
+                setRoot("primary");
+                EventBus.getDefault().post(new LogoutEvent());
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -106,13 +108,13 @@ public class App extends Application {
 	public void stop() throws Exception {
 		// TODO Auto-generated method stub
     	EventBus.getDefault().unregister(this);
+        //Logout in case user is logged in (when we close the app).
+        if(SimpleClient.userID!=-1){
+            SimpleClient.getClient().sendLogoutCommand(SimpleClient.userID,false);
+        }
         if (client != null) {
             client.sendToServer("remove client");
             client.closeConnection();
-        }
-        //Logout in case user is logged in (when we close the app).
-        if(SimpleClient.userID!=-1){
-            SimpleClient.getClient().sendLogoutCommand(SimpleClient.userID);
         }
 		super.stop();
         Platform.exit(); // Forcefully exit JavaFX platform
