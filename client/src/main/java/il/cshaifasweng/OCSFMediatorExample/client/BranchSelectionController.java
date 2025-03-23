@@ -8,6 +8,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
@@ -32,6 +33,10 @@ public class BranchSelectionController {
 
     @FXML
     private ScrollPane scrollPane;
+
+    @FXML
+    private Text headlineText;
+
 
 
     public static void setNextWindow(String nextWindow){
@@ -130,6 +135,12 @@ public class BranchSelectionController {
     @FXML
     void initialize() {
         EventBus.getDefault().register(this);
+        if(next.equals("restaurant map")){
+            headlineText.setText("Restaurant Map - Branch Selection:");
+        }
+        else if(next.equals("dish selection")){
+            headlineText.setText("Menu - Branch Selection:");
+        }
         setBranches(SimpleClient.BranchList);
     }
 }

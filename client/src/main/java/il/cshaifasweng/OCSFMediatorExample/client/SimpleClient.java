@@ -443,6 +443,7 @@ public class SimpleClient extends AbstractClient {
         sendToServer(message);
     }
 
+
     public static SimpleClient getClient() {
         if (client == null) {
             client = new SimpleClient(ip, port);
