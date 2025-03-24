@@ -127,7 +127,7 @@ public class PrimaryController {
         if (Branch != null) Branch.setVisible(SimpleClient.ruleID >= 3 && SimpleClient.ruleID <= 4);
         if (complaintHandleButton != null)
             complaintHandleButton.setVisible(SimpleClient.ruleID == 1 || SimpleClient.ruleID == 4);
-        if (reportsButton != null) reportsButton.setVisible(SimpleClient.ruleID >= 2);
+        if (reportsButton != null) reportsButton.setVisible(SimpleClient.ruleID == 2 || SimpleClient.ruleID == 4);
 //        if (Menu != null) Menu.setVisible(SimpleClient.ruleID >= 3);
     }
 

@@ -50,7 +50,7 @@ public class SimpleClient extends AbstractClient {
                         //Setting the local rules.
                         userID = workerId;
                         ruleID = rule;
-                        if(ruleID == 4){// CEO has access to all of the branches
+                        if(ruleID == 4 || ruleID == 3){// CEO has access to all of the branches
                             userBranchesIdList = BranchList.stream() .map(BranchEnt::getId).toList(); // get all branches id to userbranchesID
 
                         }else{
