@@ -32,8 +32,6 @@ public class SimpleClient extends AbstractClient {
 
     @Override
     protected void handleMessageFromServer(Object msg) {
-//        System.out.println("UserID: " + userID + " RuleID: " + ruleID);
-
         // 1) Check if we got an OCSFMessage
         if (msg instanceof Message) {
             Message message = (Message) msg;
@@ -99,16 +97,11 @@ public class SimpleClient extends AbstractClient {
                     }
 
                     if (dishes != null) {
-                        for (DishEnt dish : dishes) {
-                            System.out.println("Dish: " + dish);
-                        }
+                            System.out.println("Dishes loaded");
                     }
 
                     if (branches != null) {
-                        System.out.println("Branches Print");
-                        for (BranchEnt branch : branches) {
-                            System.out.println("Branch: " + branch);
-                        }
+                        System.out.println("Branches loaded");
                     } else {
                         System.out.println("Branches list is NULL!");
                     }
@@ -130,7 +123,6 @@ public class SimpleClient extends AbstractClient {
                 }
 
                 case "orderResponse": {
-                    System.out.println("Client: Order success!");
                     System.out.println("Received orderResponse with " + payload[0] + " ID.");
                     Platform.runLater(() -> {
                         try {
@@ -200,7 +192,6 @@ public class SimpleClient extends AbstractClient {
                     List<TableEnt> availableTables= (List<TableEnt>) payload[0];
                     List<TableEnt> takenTables= (List<TableEnt>) payload[1];
                     int branchId = (int) payload[2];
-                    System.out.println("Received Tables For Map Response");
                     EventBus.getDefault().post(new RestaurantMapEvent(takenTables, availableTables, branchId));
 
                 }
@@ -268,7 +259,7 @@ public class SimpleClient extends AbstractClient {
                 }
 
                 case "Tables were stolen": {
-                    System.out.println("Tables were stolen");
+                    System.out.println("Tables were stolen by another client.");
                     Platform.runLater(() -> {
                         try {
                             Alert alert = new Alert(Alert.AlertType.ERROR, ("Please try a different time or branch."));
