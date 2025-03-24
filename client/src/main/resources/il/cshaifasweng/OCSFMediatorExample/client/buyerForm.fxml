@@ -44,7 +44,7 @@
     <Label style="-fx-font-size: 16; -fx-font-weight: bold;" text="Payment Info" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="250.0" />
 
     <!-- ID -->
-    <Label layoutY="291.2" prefHeight="18.0" prefWidth="120.0" text="Card Holder ID::" AnchorPane.leftAnchor="40.0" AnchorPane.topAnchor="291.0" />
+    <Label layoutY="291.2" prefHeight="18.0" prefWidth="120.0" text="Card Holder ID:" AnchorPane.leftAnchor="40.0" AnchorPane.topAnchor="291.0" />
     <TextField fx:id="idField" layoutX="145.0" layoutY="287.0" prefWidth="120.0" AnchorPane.leftAnchor="145.0" AnchorPane.topAnchor="287.0" />
 
     <!-- Card Number -->
