@@ -672,20 +672,23 @@ public class SimpleServer extends AbstractServer {
                 // Expecting payload: [int workerId]
                 // -----------------------------------------------------------
                 case "logout": {
-                    if (payload.length == 1) {
+                    if (payload.length == 2) {
                         int userId = (int) payload[0];
+                        boolean updateStatus = (boolean) payload[1];
                         try {
                             Object[] logoutResult = DatabaseServer.userLogout(userId);
                             boolean logoutSuccess = (boolean) logoutResult[0];
 
-                            if (logoutSuccess) {
-                                System.out.println("Successful logout for Worker ID: " + userId);
-                                Message response = new Message("logoutResponse", new Object[]{true, userId});
-                                client.sendToClient(response);
-                            } else {
-                                System.out.println("Logout failed (either not found or already logged out).");
-                                Message response = new Message("logoutResponse", new Object[]{false, -1});
-                                client.sendToClient(response);
+                            if (updateStatus) { //Update Status - in case we close the app window, auto logout.
+                                if (logoutSuccess) {
+                                    System.out.println("Successful logout for Worker ID: " + userId);
+                                    Message response = new Message("logoutResponse", new Object[]{true, userId});
+                                    client.sendToClient(response);
+                                } else {
+                                    System.out.println("Logout failed (either not found or already logged out).");
+                                    Message response = new Message("logoutResponse", new Object[]{false, -1});
+                                    client.sendToClient(response);
+                                }
                             }
                         } catch (Exception e) {
                             throw new RuntimeException(e);

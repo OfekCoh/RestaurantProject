@@ -74,12 +74,14 @@ public class App extends Application {
 
     private void handleDisconnect() {
         try {
-            SimpleClient.getClient().sendLogoutCommand(SimpleClient.userID);
-            SimpleClient.userID = -1;
-            SimpleClient.ruleID = -1;
-            globalToolBar.setVisible(false);
-            setRoot("primary");
-            EventBus.getDefault().post(new LogoutEvent());
+            if (SimpleClient.userID != -1) {
+                SimpleClient.getClient().sendLogoutCommand(SimpleClient.userID, true);
+                SimpleClient.userID = -1;
+                SimpleClient.ruleID = -1;
+                globalToolBar.setVisible(false);
+                setRoot("primary");
+                EventBus.getDefault().post(new LogoutEvent());
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -105,9 +107,13 @@ public class App extends Application {
 
 
     @Override
-	public void stop() throws Exception {
-		// TODO Auto-generated method stub
+    public void stop() throws Exception {
+        // TODO Auto-generated method stub
         EventBus.getDefault().unregister(this);
+        //Logout in case user is logged in (when we close the app).
+        if(SimpleClient.userID!=-1){
+            SimpleClient.getClient().sendLogoutCommand(SimpleClient.userID,false);
+        }
 
         if (SimpleClient.getClient() != null) {
             Message removeClientMessage = new Message("remove client", new Object[]{});
@@ -115,29 +121,26 @@ public class App extends Application {
             SimpleClient.getClient().closeConnection();
         }
 
-        //Logout in case user is logged in (when we close the app).
-        if(SimpleClient.userID!=-1){
-            SimpleClient.getClient().sendLogoutCommand(SimpleClient.userID);
-        }
+
         super.stop();
         Platform.exit(); // Forcefully exit JavaFX platform
         System.exit(0);  // Ensure the JVM shuts down
-	}
+    }
 
     @Subscribe
     public void onWarningEvent(WarningEvent event) {
-    	Platform.runLater(() -> {
-    		Alert alert = new Alert(AlertType.INFORMATION,
-        			String.format("Message: %s\nTimestamp: %s\n",
-        					event.getWarning().getMessage(),
-        					event.getWarning().getTime().toString())
-        	);
-        	alert.show();
-    	});
+        Platform.runLater(() -> {
+            Alert alert = new Alert(AlertType.INFORMATION,
+                    String.format("Message: %s\nTimestamp: %s\n",
+                            event.getWarning().getMessage(),
+                            event.getWarning().getTime().toString())
+            );
+            alert.show();
+        });
 
     }
 
-	public static void main(String[] args) {
+    public static void main(String[] args) {
         launch();
     }
 
