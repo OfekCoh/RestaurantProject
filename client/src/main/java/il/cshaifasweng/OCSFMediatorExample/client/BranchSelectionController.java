@@ -5,12 +5,17 @@ import il.cshaifasweng.OCSFMediatorExample.entities.BranchEnt;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
+
+import java.time.LocalTime;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import java.io.IOException;
 import java.util.List;
@@ -105,8 +110,27 @@ public class BranchSelectionController {
                 .map(BranchEnt::getBranchName)
                 .findFirst()
                 .orElse("Unknown Branch");
+
+
         try{
             if(next.equals("restaurant map")){
+                // check if the branch is closed
+                BranchEnt selectedBranch = branches.stream().filter(branch -> branch.getId() == branchId).findFirst().orElse(null); // get branch
+                int dayIndex = LocalDate.now().getDayOfWeek().getValue() % 7; // get today's day
+                String[] openingHours = selectedBranch.getOpeningHours(); // get opening hours for all week
+                String todayHours = openingHours[dayIndex]; // get opening hours for today
+                String[] hours = todayHours.split("-"); // splits 08:00-16:00 to [08:00,16:00]
+                LocalTime closingTime = LocalTime.parse(hours[1].trim(), DateTimeFormatter.ofPattern("HH:mm")); // gets closing time
+                LocalTime now = LocalTime.now();
+
+                // if closed show alert
+                if (now.isAfter(closingTime)) {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION, "Branch is closed!");
+                    alert.show();
+                    return;
+                }
+
+                // else continue to map
                 RestaurantMapController.setBranchId(branchId);
                 App.setRoot("restaurantMap");
             }
