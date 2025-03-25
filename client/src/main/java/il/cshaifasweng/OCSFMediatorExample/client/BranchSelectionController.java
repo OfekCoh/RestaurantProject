@@ -116,6 +116,13 @@ public class BranchSelectionController {
             if(next.equals("restaurant map")){
                 // check if the branch is closed
                 BranchEnt selectedBranch = branches.stream().filter(branch -> branch.getId() == branchId).findFirst().orElse(null); // get branch
+
+                if (selectedBranch == null) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Branch not found!");
+                    alert.show();
+                    return;
+                } // if branch not found
+
                 int dayIndex = LocalDate.now().getDayOfWeek().getValue() % 7; // get today's day
                 String[] openingHours = selectedBranch.getOpeningHours(); // get opening hours for all week
                 String todayHours = openingHours[dayIndex]; // get opening hours for today
