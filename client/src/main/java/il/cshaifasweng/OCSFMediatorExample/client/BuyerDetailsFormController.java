@@ -107,28 +107,60 @@ public class BuyerDetailsFormController {
                             "Please fill in all required fields!"
                     ));
             alert.show();
-            System.out.println("Please fill in all required fields!");
             return;
-
-
         }
 
-        // Validate numeric phone, ID, cardNumber, CVV
-        //    You can do more advanced checks as needed.
-        try {
-            Long.parseLong(phone); // phone must be numeric
-            Long.parseLong(userID); // ID numeric
-            Long.parseLong(cardNumber); // cardNumber numeric
-            Integer.parseInt(cvv); // CVV numeric
-        } catch (NumberFormatException e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR,
-                    String.format("Message: %s\n",
-                            "Phone/ID/CardNumber/CVV must be numeric!"
-                    ));
+        // validate all fields:
+
+        // name must be letters and space only and shorter than 50
+        if (!name.matches("^[a-zA-Z ]{1,50}$")) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Name can only contain letters and spaces (max 50 characters).");
             alert.show();
-//            System.out.println("Phone/ID/CardNumber/CVV must be numeric!");
             return;
         }
+
+        // Phone number must be between 7 and 15 digits
+        if (!phone.matches("\\d{7,15}")) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Phone number must be between 7 and 15 digits.");
+            alert.show();
+            return;
+        }
+
+        // Address must have letter and shorter than 50
+        if (!address.isEmpty() && !address.matches("^(?=.*[a-zA-Z])[a-zA-Z0-9 ]{1,50}$")) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Address must contain at least one letter and can include digits and spaces (max 50 characters).");
+            alert.show();
+            return;
+        }
+
+        //  Email must be less than 50 characters and follows a valid format
+        if (!email.isEmpty() && !email.matches("^[A-Za-z0-9+_.-]{1,50}@[A-Za-z0-9.-]{1,50}$") || email.length() >= 50) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid email format or email exceeds 50 characters!");
+            alert.show();
+            return;
+        }
+
+        // User ID must be exactly 9 digits.
+        if (!userID.matches("\\d{3}")) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "User ID must be exactly 9 digits.");
+            alert.show();
+            return;
+        }
+
+        // Card Number must be exactly 16 digits.
+        if (!cardNumber.matches("\\d{3}")) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Card Number must be exactly 16 digits.");
+            alert.show();
+            return;
+        }
+
+        // CVV must be exactly 3 digits.
+        if (!cvv.matches("\\d{3}")) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "CVV must be exactly 3 digits.");
+            alert.show();
+            return;
+        }
+
 
         //Validate the card expiry is not in the past
         LocalDate now = LocalDate.now();
