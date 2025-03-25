@@ -119,6 +119,13 @@ public class BranchSelectionController {
                 int dayIndex = LocalDate.now().getDayOfWeek().getValue() % 7; // get today's day
                 String[] openingHours = selectedBranch.getOpeningHours(); // get opening hours for all week
                 String todayHours = openingHours[dayIndex]; // get opening hours for today
+
+                if (todayHours.equalsIgnoreCase("closed")) {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION, "Branch is closed!");
+                    alert.show();
+                    return;
+                } // if closed show alert
+
                 String[] hours = todayHours.split("-"); // splits 08:00-16:00 to [08:00,16:00]
                 LocalTime closingTime = LocalTime.parse(hours[1].trim(), DateTimeFormatter.ofPattern("HH:mm")); // gets closing time
                 LocalTime now = LocalTime.now();
