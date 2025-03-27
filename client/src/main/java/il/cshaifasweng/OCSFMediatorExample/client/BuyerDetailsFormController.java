@@ -141,14 +141,14 @@ public class BuyerDetailsFormController {
         }
 
         // User ID must be exactly 9 digits.
-        if (!userID.matches("\\d{3}")) {
+        if (!userID.matches("\\d{9}")) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "User ID must be exactly 9 digits.");
             alert.show();
             return;
         }
 
         // Card Number must be exactly 16 digits.
-        if (!cardNumber.matches("\\d{3}")) {
+        if (!cardNumber.matches("\\d{16}")) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "Card Number must be exactly 16 digits.");
             alert.show();
             return;
