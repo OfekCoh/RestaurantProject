@@ -6,6 +6,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
@@ -19,6 +20,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +30,7 @@ public class DishSelectionController {
     @FXML private Button backButton;
     @FXML private Label menuLabel;
     @FXML private TextField searchField;
+    @FXML private ComboBox<String> sortComboBox;
 
     // The cart button in top-right
     @FXML private Button cartButton;
@@ -84,6 +87,10 @@ public class DishSelectionController {
 
 //        searchField.setFocusTraversable(false);
 //        dishGrid.requestFocus();
+        sortComboBox.getItems().addAll("Default", "Low to High", "High to Low");
+        sortComboBox.setValue("Default");
+        sortComboBox.valueProperty().addListener((obs, oldVal, newVal) -> onSearch());
+
         // Live filtering while typing
         searchField.textProperty().addListener((obs, oldVal, newVal) -> onSearch());
     }
@@ -95,6 +102,19 @@ public class DishSelectionController {
         List<DishEnt> filtered = dishes.stream()
                 .filter(d -> d.getName().toLowerCase().contains(txt))
                 .collect(Collectors.toList());
+
+        if (sortComboBox != null) {
+            String sortOrder = sortComboBox.getValue();
+            if ("Low to High".equals(sortOrder)) {
+                filtered.sort(Comparator.comparingDouble((DishEnt dish) ->
+                        dish.getIsSalePrice() ? dish.getSalePrice() : dish.getPrice()));
+
+            } else if ("High to Low".equals(sortOrder)) {
+                filtered.sort(Comparator.comparingDouble((DishEnt dish) ->
+                        dish.getIsSalePrice() ? dish.getSalePrice() : dish.getPrice()).reversed());
+            }
+        }
+
         populateDishGrid(filtered);
     }
 
