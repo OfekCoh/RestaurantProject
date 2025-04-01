@@ -1,6 +1,5 @@
 package il.cshaifasweng.OCSFMediatorExample.server;
 
-import com.mysql.cj.xdevapi.Client;
 import il.cshaifasweng.OCSFMediatorExample.entities.*;
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.AbstractServer;
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.ConnectionToClient;
@@ -11,11 +10,8 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
+import java.time.*;
 import il.cshaifasweng.OCSFMediatorExample.server.ocsf.SubscribedClient;
-import org.dom4j.Branch;
-
-import javax.xml.crypto.Data;
 
 public class SimpleServer extends AbstractServer {
     private static ArrayList<SubscribedClient> SubscribersList = new ArrayList<>();
@@ -857,60 +853,53 @@ public class SimpleServer extends AbstractServer {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
         scheduler.scheduleAtFixedRate(() -> {
+            // Auto-handle complaints older than 24 hours
             boolean complaintsUpdated = DatabaseServer.autoHandleOldComplaints();
 
-            Calendar calendar = Calendar.getInstance();
-            int minute = calendar.get(Calendar.MINUTE);
-            int hour = calendar.get(Calendar.HOUR_OF_DAY);
-            int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK); // Sunday = 1, Saturday = 7
+            // Get current date and time
+            LocalDateTime now = LocalDateTime.now();
+            LocalTime currentTime = now.toLocalTime();
+            DayOfWeek dayOfWeek = now.getDayOfWeek(); // MONDAY = 1 ... SUNDAY = 7
 
-            // Adjust day index to match openingHours list (0 = Monday, 6 = Sunday)
-            int openingHoursIndex = (dayOfWeek + 5) % 7;
+            // Adjust day index: convert DayOfWeek to match openingHours list (0 = Monday, 6 = Sunday)
+            int openingHoursIndex = (dayOfWeek.getValue() % 7);
 
-            if (minute % 15 == 0) { // Check every round 15 minuets: 0, 15,30,45 of the hour
-                try {
-
-                    // go over all of the branches
+            // Only run logic every 15 minutes (on the quarter: 00, 15, 30, 45)
+            if (currentTime.getMinute() % 15 == 0) {
+               try {
                     for (int branchId = 1; branchId <= maxBranchId; branchId++) {
+                        // Retrieve today's opening hours for this branch
                         List<String> openingHours = DatabaseServer.getBranchOpeningHours(branchId);
 
+                        // If no schedule or the day’s data is missing, skip
                         if (openingHours == null || openingHours.size() <= openingHoursIndex) continue;
 
                         String hoursToday = openingHours.get(openingHoursIndex);
-                        if (hoursToday == null || hoursToday.equalsIgnoreCase("Closed")) continue;
+                        if (hoursToday == null || hoursToday.equalsIgnoreCase("Closed")) {
+                             continue;
+                        }
 
-                        // Parse opening and closing times
+                        // Parse the opening and closing times (e.g., "08:00-16:00")
                         String[] parts = hoursToday.split("-");
                         if (parts.length != 2) continue;
 
-                        int openHour = Integer.parseInt(parts[0].split(":")[0]);
-                        int openMinute = Integer.parseInt(parts[0].split(":")[1]);
-                        int closeHour = Integer.parseInt(parts[1].split(":")[0]);
-                        int closeMinute = Integer.parseInt(parts[1].split(":")[1]);
+                        LocalTime openTime = LocalTime.parse(parts[0]);
+                        LocalTime closeTime = LocalTime.parse(parts[1]);
 
-                        Calendar openTime = (Calendar) calendar.clone();
-                        openTime.set(Calendar.HOUR_OF_DAY, openHour);
-                        openTime.set(Calendar.MINUTE, openMinute);
-
-                        Calendar closeTime = (Calendar) calendar.clone();
-                        closeTime.set(Calendar.HOUR_OF_DAY, closeHour);
-                        closeTime.set(Calendar.MINUTE, closeMinute);
-
-                        // Run check only if current time is within opening hours
-                        if (calendar.after(openTime) && calendar.before(closeTime)) {
+                        // Only proceed if the current time is within open hours
+                        if (!currentTime.isBefore(openTime) && currentTime.isBefore(closeTime)) {
                             Message response = getCurrentAvailableTablesInBranch(branchId);
                             sendToAllClients(response);
                         }
                     }
+
                 } catch (Exception e) {
+                    System.err.println("Error during scheduler execution:");
                     e.printStackTrace();
                 }
             }
 
-            if (complaintsUpdated) {
-                System.out.println("Auto-handled complaints. Notifying clients...");
-            }
-        }, 0, schedulerIntervals, TimeUnit.MINUTES);
+        }, 0, schedulerIntervals, TimeUnit.MINUTES); // Run scheduler every 1 minute
     }
 
 }
