@@ -58,6 +58,7 @@ public class DishSelectionController {
         Platform.runLater(() -> {
             setDishes(event.getDishList());
             populateDishGrid();
+            onSearch();
         });
     }
 
