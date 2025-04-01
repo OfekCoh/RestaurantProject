@@ -1146,27 +1146,7 @@ public class DatabaseServer {
         return calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
     }
 
-
-//    private static <T> List<T> getAllEntities(Class<T> entityClass) throws Exception {
-//        CriteriaBuilder builder = session.getCriteriaBuilder();
-//        CriteriaQuery<T> query = builder.createQuery(entityClass);
-//        query.from(entityClass);
-//        List<T> data = session.createQuery(query).getResultList();
-//        return data;
-//    }
-
-//    private static void printAllBranches(Session session) throws Exception {
-//        List<RestaurantBranch> branches = getAllEntities(RestaurantBranch.class);
-//        for (RestaurantBranch branch : branches) {
-//            System.out.print(branch.getId() + ". Branch '" + branch.getBranchName() + "', in '" + branch.getLocation() + "'.\n");
-//            System.out.print("     Menu:\n");
-//            List<Dish> dishes = branch.getAllDishesInBranch(session);
-//            for (Dish dish : dishes) {
-//                System.out.print("     [" + dish.getId() + "]:   " + dish.getPrice() + "$   " + dish.getName() + "  --  " + dish.getDescription() + "\n");
-//            }
-//        }
-//    }
-/// //////////////////////////////////////test for roy
+    // data for testing
     public static void insertTestData() {
         try (Session session = getSessionFactory().openSession()) {
             Transaction transaction = session.beginTransaction();
@@ -1177,7 +1157,7 @@ public class DatabaseServer {
 
             System.out.println("Inserting test data for Branch ID 1...");
 
-            // Insert 10 Orders (Always Branch ID 1)
+            // Insert 10 Orders (Always Branch ID 2)
             for (int i = 0; i < 10; i++) {
                 boolean isDelivery = random.nextBoolean();
                 calendar.set(Calendar.DAY_OF_MONTH, random.nextInt(daysInPrevMonth) + 1);
@@ -1191,7 +1171,7 @@ public class DatabaseServer {
                 int randomStatus = random.nextInt(5); // Random status between 0 and 4
 
                 Order order = new Order(
-                        1, isDelivery, Arrays.asList(101, 102),
+                        2, isDelivery, Arrays.asList(101, 102),
                         Arrays.asList("No onions"), buyer, orderDate,
                         20 + (random.nextDouble() * 30)
                 );
@@ -1199,7 +1179,7 @@ public class DatabaseServer {
                 session.save(order);
             }
 
-            // Insert 10 Table Orders (Always Branch ID 1)
+            // Insert 10 Table Orders (Always Branch ID 2)
             for (int i = 0; i < 10; i++) {
                 int numberOfGuests = random.nextInt(6) + 1;
                 calendar.set(Calendar.DAY_OF_MONTH, random.nextInt(daysInPrevMonth) + 1);
@@ -1215,7 +1195,7 @@ public class DatabaseServer {
                 );
 
                 TableOrder tableOrder = new TableOrder(
-                        1, null, date, time, numberOfGuests, location, status, buyerDetailsNeeded, tableBuyer
+                        2, null, date, time, numberOfGuests, location, status, buyerDetailsNeeded, tableBuyer
                 );
 
                 session.save(tableOrder);
